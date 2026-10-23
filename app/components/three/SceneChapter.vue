@@ -44,7 +44,44 @@ const unavailable = ref(false)
 const phone = ref(false)
 const active = ref(-1)
 
-const focusNow = computed(() => (phone.value ? props.phoneFocus : props.focus))
+const stage = ref<HTMLElement | null>(null)
+const dock = ref<HTMLElement | null>(null)
+/**
+ * The band of the stage nothing covers, as fractions of its height. Wide
+ * screens: from the dock's bottom (it sits at the top) to the floating nav's
+ * top. Phones: above the dock (it sits under the scene). The focus box keeps
+ * inside it, so a scene never frames its subject under the dock or the nav,
+ * whatever the screen and however the dock wraps.
+ */
+const clear = ref<{ top: number, bottom: number } | null>(null)
+
+function measureDock() {
+  const s = stage.value?.getBoundingClientRect()
+  const d = dock.value?.getBoundingClientRect()
+  if (!s || !d || d.height <= 0 || s.height <= 0) {
+    clear.value = null
+    return
+  }
+  const at = (y: number) => (y - s.top) / s.height
+  if (phone.value) {
+    clear.value = { top: 0, bottom: at(d.top) }
+    return
+  }
+  // The nav is fixed to the screen, not the stage: measured up from the screen's bottom, which the pinned stage fills.
+  const nav = document.querySelector('.rail-wrap')?.getBoundingClientRect()
+  clear.value = { top: at(d.bottom), bottom: nav && nav.height > 0 ? 1 - (window.innerHeight - nav.top) / s.height : 1 }
+}
+
+const focusNow = computed(() => {
+  const base = phone.value ? props.phoneFocus : props.focus
+  const c = clear.value
+  if (!c || !base.trim()) return base
+  const [x0 = 0, x1 = 1, y0 = 0, y1 = 1] = base.trim().split(/\s+/).map(Number)
+  const gap = 0.015
+  const top = c.top > 0 ? Math.max(y0, c.top + gap) : y0
+  const bottom = c.bottom < 1 ? Math.min(y1, c.bottom - gap) : y1
+  return `${x0} ${x1} ${top.toFixed(3)} ${bottom.toFixed(3)}`
+})
 /** The focus box as fractions: hover labels come out scaled by its size. */
 const box = computed(() => {
   const [x0 = 0, x1 = 1, y0 = 0, y1 = 1] = focusNow.value.trim().split(/\s+/).map(Number)
@@ -150,17 +187,24 @@ function calloutOff(e?: PointerEvent) {
 let mq: MediaQueryList | null = null
 const onMq = () => {
   phone.value = Boolean(mq?.matches)
+  measureDock()
 }
+// The dock wraps differently at every width, and the display face arriving late resizes it.
+let dockObserver: ResizeObserver | null = null
 
 onMounted(() => {
   mq = window.matchMedia('(max-width: 740px)')
   onMq()
   mq.addEventListener('change', onMq)
   window.addEventListener('scroll', onScroll, { passive: true })
+  dockObserver = new ResizeObserver(measureDock)
+  if (stage.value) dockObserver.observe(stage.value)
+  if (dock.value) dockObserver.observe(dock.value)
   measure()
 })
 
 onUnmounted(() => {
+  dockObserver?.disconnect()
   mq?.removeEventListener('change', onMq)
   window.removeEventListener('scroll', onScroll)
   cancelAnimationFrame(raf)
@@ -177,7 +221,7 @@ onUnmounted(() => {
       <slot :active="active" />
     </div>
 
-    <div class="chapter-stage">
+    <div ref="stage" class="chapter-stage">
       <ThreeSceneSlot
         ref="slot"
         :scene="scene"
@@ -194,7 +238,7 @@ onUnmounted(() => {
         <span class="chapter-callout-leader" />
         <span class="chapter-callout-text" />
       </div>
-      <div class="chapter-dock" data-scene-ignore>
+      <div ref="dock" class="chapter-dock" data-scene-ignore>
         <p class="chapter-caption">
           <span class="chapter-text">{{ caption }}</span>
           <span v-if="hint && view !== 'reduced' && !unavailable" class="chapter-hint" aria-hidden="true">{{ hint }}</span>
@@ -359,9 +403,10 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
-/* Phones: the scene holds the top of the screen, the panels rise over the rest. */
-@media (max-width: 740px) {
-  /* One row of controls that scrolls sideways, so the box never covers the drawing. */
+/* Phones, and short screens (a landscape phone): a compact dock -- one row of
+   controls that scrolls sideways, two lines of caption, no hint -- so the box
+   leaves the drawing most of the screen. */
+@media (max-width: 740px), (max-height: 500px) {
   .chapter-controls {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -382,22 +427,28 @@ onUnmounted(() => {
     overflow: hidden;
   }
 
+  .chapter-hint {
+    display: none;
+  }
+
+  .chapter-dock {
+    padding: 0.6rem 0.75rem;
+  }
+}
+
+/* Phones: the scene holds the top of the screen, the panels rise over the rest. */
+@media (max-width: 740px) {
   .chapter-dock {
     top: auto;
     right: 0.75rem;
     left: 0.75rem;
     bottom: calc(40svh + 0.75rem);
     max-width: none;
-    padding: 0.6rem 0.75rem;
   }
 
   .panels-right .chapter-dock {
     left: 0.75rem;
     right: 0.75rem;
-  }
-
-  .chapter-hint {
-    display: none;
   }
 
   .chapter-panels,
