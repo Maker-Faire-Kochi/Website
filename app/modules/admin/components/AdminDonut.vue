@@ -4,7 +4,7 @@ import type { CountRow } from '../composables/useInterestAnalytics'
 
 const props = defineProps<{ fig: string, title: string, rows: CountRow[] }>()
 
-const PALETTE = ['#0A0A0A', '#00AEEF', '#C4121A', '#8C8C8C', '#7FD6F7', '#555555', '#F2A5A8']
+const PALETTE = ['#222222', '#00AEEF', '#C4121A', '#8C8C8C', '#7FD6F7', '#555555', '#F2A5A8']
 const R = 52
 const C = 2 * Math.PI * R
 
@@ -72,10 +72,10 @@ const centre = computed(() => {
 .donut { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.25rem; align-items: center; }
 .donut-svg { flex: 0 0 9rem; width: 9rem; height: auto; overflow: visible; }
 .donut-legend { flex: 1 1 12rem; min-width: 0; }
-.donut-track { fill: none; stroke: rgba(10, 10, 10, 0.06); stroke-width: 16; }
+.donut-track { fill: none; stroke: rgba(34, 34, 34, 0.06); stroke-width: 16; }
 .donut-seg { fill: none; stroke-width: 16; transition: opacity 120ms linear, stroke-width 120ms; cursor: default; }
 .donut-seg.dim { opacity: 0.25; }
-.donut-n { font-family: var(--font-panel); font-stretch: 62%; font-weight: 900; font-size: 26px; fill: var(--pn-ink); }
+.donut-n { font-family: var(--font-panel); font-weight: 400; font-size: 26px; fill: var(--pn-ink); }
 .donut-l { font-family: var(--font-readout); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; fill: var(--pn-label); }
 .donut-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
 .donut-legend li {
@@ -84,7 +84,7 @@ const centre = computed(() => {
   gap: 0.6rem;
   align-items: center;
   padding-bottom: 0.35rem;
-  border-bottom: 1px solid rgba(10, 10, 10, 0.1);
+  border-bottom: 1px solid rgba(34, 34, 34, 0.1);
   font-family: var(--font-readout);
   font-size: 0.78rem;
   transition: opacity 120ms linear;
@@ -92,5 +92,5 @@ const centre = computed(() => {
 .donut-legend li.dim { opacity: 0.35; }
 .donut-legend i { width: 10px; height: 10px; }
 .lg-label { line-height: 1.35; overflow-wrap: anywhere; }
-.lg-n { font-variant-numeric: tabular-nums; font-weight: 600; }
+.lg-n { font-variant-numeric: tabular-nums; font-weight: 500; }
 </style>

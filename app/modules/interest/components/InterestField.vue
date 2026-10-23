@@ -22,23 +22,31 @@ defineProps<{
 .at-field {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  margin-bottom: 1.25rem;
+  gap: 0.5rem;
 }
+
+.at-field + .at-field {
+  margin-top: 2rem;
+}
+
 .at-label {
+  max-width: var(--field-w);
   font-size: 1rem;
-  font-weight: 600;
-  line-height: 1.4;
+  font-weight: 500;
+  line-height: 1.45;
   color: var(--pn-ink);
 }
+
 .at-req {
+  margin-left: 0.2rem;
   color: var(--color-red-cta);
-  margin-left: 0.15rem;
 }
+
 .at-hint {
-  margin: 0;
+  margin: -0.25rem 0 0.25rem;
+  max-width: var(--field-w);
   font-size: 1rem;
+  line-height: 1.45;
   color: var(--pn-label);
-  line-height: 1.4;
 }
 </style>

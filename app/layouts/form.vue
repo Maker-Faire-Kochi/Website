@@ -2,7 +2,7 @@
 const route = useRoute()
 
 useHead({
-  meta: [{ name: 'theme-color', content: '#FFFFFF' }],
+  meta: [{ name: 'theme-color', content: '#F6F6F3' }],
 })
 
 const sheet = computed(() =>
@@ -33,5 +33,9 @@ const sheet = computed(() =>
 .form-layout {
   min-height: 100svh;
   color: var(--pn-ink);
+}
+
+#form-main:focus {
+  outline: none;
 }
 </style>

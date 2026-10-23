@@ -54,7 +54,7 @@ const hh = (h: number) => `${String(h).padStart(2, '0')}:00`
 .heat-cell,
 .heat-scale i {
   aspect-ratio: 1;
-  background: rgba(10, 10, 10, 0.05);
+  background: rgba(34, 34, 34, 0.05);
   background-image: linear-gradient(rgba(0, 174, 239, var(--a)), rgba(0, 174, 239, var(--a)));
 }
 .heat-cell:hover { outline: 1.5px solid var(--pn-ink); }

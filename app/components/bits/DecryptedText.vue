@@ -34,14 +34,16 @@ function scramble() {
   raf = requestAnimationFrame(frame)
 }
 
+const { state: motion } = useMotion()
+
 watch(() => props.text, (t) => {
   if (raf) cancelAnimationFrame(raf)
   shown.value = t
-  if (import.meta.client && !matchMedia('(prefers-reduced-motion: reduce)').matches) scramble()
+  if (import.meta.client && motion.value === 'running') scramble()
 })
 
 onMounted(() => {
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches || typeof IntersectionObserver === 'undefined') return
+  if (motion.value !== 'running' || typeof IntersectionObserver === 'undefined') return
   io = new IntersectionObserver(([e]) => {
     if (e?.isIntersecting) {
       scramble()

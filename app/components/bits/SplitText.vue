@@ -63,4 +63,11 @@ const chars = computed(() => {
     animation: none;
   }
 }
+
+/* A stored Pause (useMotion) skips the entrance too. Keyed to the state at
+   LOAD (data-motion-start, set once), not the live one: pressing Play later
+   would otherwise re-add the animation and blank the headline to replay it. */
+:root[data-motion-start='paused'] .split-char {
+  animation: none;
+}
 </style>

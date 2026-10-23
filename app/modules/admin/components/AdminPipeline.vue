@@ -3,7 +3,7 @@ import type { CountRow } from '../composables/useInterestAnalytics'
 
 defineProps<{ fig: string, title: string, rows: CountRow[] }>()
 
-const COLORS: Record<string, string> = { new: '#C4121A', reviewed: '#00AEEF', contacted: '#0A0A0A', archived: '#BDBDBD' }
+const COLORS: Record<string, string> = { new: '#C4121A', reviewed: '#00AEEF', contacted: '#222222', archived: '#BDBDBD' }
 </script>
 
 <template>
@@ -34,7 +34,7 @@ const COLORS: Record<string, string> = { new: '#C4121A', reviewed: '#00AEEF', co
 </template>
 
 <style scoped>
-.pipe { display: flex; gap: 2px; height: 18px; margin-bottom: 1rem; background: rgba(10, 10, 10, 0.05); }
+.pipe { display: flex; gap: 2px; height: 18px; margin-bottom: 1rem; background: rgba(34, 34, 34, 0.05); }
 .pipe-seg { flex-basis: 0; min-width: 0; transition: flex-grow 600ms var(--ease-out); }
 .pipe-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr)); gap: 0.75rem; }
 .pipe-steps li {
@@ -51,6 +51,6 @@ const COLORS: Record<string, string> = { new: '#C4121A', reviewed: '#00AEEF', co
 .pipe-i { color: var(--pn-label); }
 .pipe-steps i { width: 8px; height: 8px; }
 .pipe-label { text-transform: uppercase; letter-spacing: 0.06em; }
-.pipe-n { grid-column: 1 / 3; font-family: var(--font-panel); font-stretch: 62%; font-weight: 900; font-size: 1.9rem; line-height: 1.1; }
+.pipe-n { grid-column: 1 / 3; font-family: var(--font-panel); font-weight: 400; font-size: 1.9rem; line-height: 1.1; }
 .pipe-pct { align-self: end; padding-bottom: 0.35rem; color: var(--pn-label); }
 </style>

@@ -9,18 +9,32 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "test:interest": "npx --yes tsx scripts/test-interest-validate.ts",
-    "test:volunteer": "npx --yes tsx scripts/test-volunteer-validate.ts"
+    "test:volunteer": "npx --yes tsx scripts/test-volunteer-validate.ts",
+    "test:balance": "npx --yes tsx scripts/test-balance.ts",
+    "test:gait": "npx --yes tsx scripts/test-gait.ts",
+    "test:scenes": "npx --yes tsx scripts/test-backwater.ts && npx --yes tsx scripts/test-workshop.ts && npx --yes tsx scripts/test-electronics.ts && npx --yes tsx scripts/test-noise.ts && npx --yes tsx scripts/test-machines.ts && npx --yes tsx scripts/test-people.ts",
+    "test:three": "npm run test:balance && npm run test:gait && npm run test:collisions && npm run test:scenes",
+    "shot": "node scripts/shot.mjs",
+    "test:contrast": "npx --yes tsx scripts/contrast-audit.ts",
+    "check:overflow": "node scripts/check-overflow.mjs",
+    "posters": "node scripts/render-poster.mjs",
+    "test:collisions": "npx --yes tsx scripts/test-collisions.ts"
   },
   "dependencies": {
+    "@chenglou/pretext": "1.0.0",
     "@lucide/vue": "^1.33.0",
     "@nuxt/ui": "^4.10.0",
     "@supabase/supabase-js": "^2.117.1",
     "nuxt": "^4.5.2",
     "tailwindcss": "^4.3.3",
+    "three": "0.186.1",
     "vue": "^3.5.41",
     "vue-router": "^5.2.0"
   },
   "devDependencies": {
+    "@types/three": "0.186.0",
+    "playwright-core": "1.64.1",
+    "sharp": "0.35.5",
     "supabase": "^2.118.0",
     "wrangler": "^4.125.0"
   }

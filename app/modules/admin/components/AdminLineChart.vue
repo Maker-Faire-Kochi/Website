@@ -109,9 +109,9 @@ const total = computed(() => props.days.reduce((a, d) => a + d.count, 0))
 <style scoped>
 .line-wrap { position: relative; }
 .line-svg { display: block; width: 100%; height: auto; font-family: var(--font-readout); }
-.grid line { stroke: rgba(10, 10, 10, 0.1); stroke-dasharray: 2 4; }
+.grid line { stroke: rgba(34, 34, 34, 0.1); stroke-dasharray: 2 4; }
 .axis text { font-size: 11px; fill: var(--pn-label); }
-.cum-label { fill: var(--color-cyan) !important; font-weight: 600; }
+.cum-label { fill: var(--color-cyan-text) !important; font-weight: 500; }
 .bar { fill: var(--pn-ink); transition: fill 100ms linear; }
 .bar.on { fill: var(--color-red-cta); }
 .cum-area { fill: rgba(0, 174, 239, 0.1); }
@@ -133,7 +133,7 @@ const total = computed(() => props.days.reduce((a, d) => a + d.count, 0))
   white-space: nowrap;
   pointer-events: none;
 }
-.tip strong { font-weight: 600; }
+.tip strong { font-weight: 500; }
 .legend {
   display: flex;
   gap: 1.25rem;

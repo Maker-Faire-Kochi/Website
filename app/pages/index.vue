@@ -1,16 +1,25 @@
 <script setup lang="ts">
-import NetHero from '~/components/hero/NetHero.vue'
-
 /**
- * Scroll reveal: every direct child of a sheet (bar its sheet head, which
- * decrypts itself) rises in as it enters. The hidden state exists only once
- * this script has run, so no-JS visitors see a fully drawn page.
+ * The homepage, told as a story in colour fields (see .field in main.css):
+ * the event (yellow poster) / what a Maker Faire is / why Kochi, over the
+ * cheena vala / the faire's aisle: every discipline, one stall each / a
+ * carpenter at work / a maker at the bench / make some noise (yellow) / three
+ * ways in (blue) / when and where, counted down by the machine / 2027 and
+ * beyond (yellow). The scenes are full-screen chapters (ThreeSceneChapter):
+ * the drawing holds the screen while the words scroll over one side.
+ *
+ * Scroll reveal: text below the fold rises in as it enters. The hidden state
+ * exists only once this script has run, so no-JS visitors see a whole page.
+ * Figures are never revealed this way: their drawing is on the canvas and
+ * would not fade with them.
  */
 let io: IntersectionObserver | null = null
+const { state: motion } = useMotion()
 
 onMounted(() => {
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches || typeof IntersectionObserver === 'undefined') return
-  const els = document.querySelectorAll<HTMLElement>('#about > :not(.sheet-head), #categories > :not(.sheet-head), #countdown > :not(.sheet-head), .maker-footer .footer-container')
+  // Paused or reduced: everything is simply shown in its final place.
+  if (motion.value !== 'running' || typeof IntersectionObserver === 'undefined') return
+  const els = document.querySelectorAll<HTMLElement>('.field .wrap > :not(.hero-copy), .maker-footer .footer-container')
   io = new IntersectionObserver((entries) => {
     for (const e of entries) {
       if (!e.isIntersecting) continue
@@ -26,17 +35,32 @@ onMounted(() => {
   }
 })
 
+// Pausing mid-page must not strand sections that have not risen in yet.
+watch(motion, (m) => {
+  if (m === 'running') return
+  io?.disconnect()
+  document.querySelectorAll('.reveal:not(.is-in)').forEach(el => el.classList.add('is-in'))
+})
+
 onUnmounted(() => io?.disconnect())
 </script>
 
 <template>
   <PageLoader />
   <BitsClickSpark />
+  <!-- NOT positioned: a positioned <main> would paint the fields' backgrounds
+       over the 3D canvas (see .field in main.css). -->
   <main id="main" tabindex="-1">
-    <NetHero />
-    <MakerAbout />
-    <MakerCategories />
-    <MakerCountdown />
+    <HomeHero />
+    <HomeWhat />
+    <HomeKochi />
+    <HomeDomains />
+    <HomeWorkshop />
+    <HomeBench />
+    <HomeNoise />
+    <HomeTakePart />
+    <HomeWhen />
+    <HomeBeyond />
   </main>
 </template>
 

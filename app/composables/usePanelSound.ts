@@ -30,6 +30,24 @@ function audio(): AudioContext | null {
   return ctx
 }
 
+/**
+ * For the 3D scenes' own voices (each scene folder's sound.ts): the shared
+ * AudioContext, or null when the rail's Sound key is off OR the visitor has not
+ * interacted with the page yet. Scenes must call this per sound and play
+ * nothing on null -- that is what keeps the page silent until someone acts.
+ */
+export function soundContext(): AudioContext | null {
+  if (!enabled.value) return null
+  const activation = typeof navigator === 'undefined' ? null : (navigator as any).userActivation
+  if (activation && !activation.hasBeenActive) return null
+  return audio()
+}
+
+/** 50ms of white noise in the shared context (after soundContext() returned non-null). */
+export function noiseBuffer(): AudioBuffer | null {
+  return noise
+}
+
 function tick(freq: number, gain: number, dur: number, thunk: number) {
   const ac = audio()
   if (!ac || !noise) return
@@ -180,7 +198,7 @@ export function playMachine(kind: MachineSound) {
   }
 }
 
-const KEY_SELECTOR = '.key'
+const KEY_SELECTOR = '.key, [data-key-sound]'
 
 export function usePanelSound() {
   let downEl: Element | null = null

@@ -1,8 +1,155 @@
 # Maker Faire Kochi 2027 — project notes
 
-Nuxt 4 / Vue 3 single-page site. No test runner.
+Nuxt 4 / Vue 3 single-page site, three.js 0.186 for every drawing. No test runner; tests are tsx scripts (`npm run test:*`).
 
-## Current design: "control panel / drawing sheet" (2026-09)
+## Current design: campaign fields + full-screen 3D chapters (revamp, 2026-10)
+
+Visual language: **Dela Gothic One** display (`--font-panel`, one weight, `--lh-display` 1.08) +
+**Inter** text (`--font-readout`), Noto Sans Malayalam on `:lang(ml)`. Whole sections are colour
+FIELDS (`.field-paper | -yellow | -blue | -ink`; campaign yellow `#FFE86C`, blue `#2B19D9`), red
+`#C4121A` is the action, cyan is structural only. Every drawing is **live three.js in the
+straight-beam hairline style** (slotted straight members, plain pins, opaque faces, fine edge lines).
+Event: **5–6 February 2027, The Grounds @ Chakola Mill, Kochi** (all facts live in `EVENT`,
+`useCountdown.ts`; nuxt.config, error.vue and `server/utils/mailer.ts` keep their own literals).
+
+Page order (`pages/index.vue`) — the rail's stations and the footer must follow it:
+Hero (`#top`, yellow) · What (`#about`, paper, one screen) · Kochi (`#kochi`, backwater chapter) ·
+Domains (`#categories`, the aisle) · Workshop (`#workshop`, carpenter chapter) · Bench (`#bench`,
+electronics chapter) · Noise (`#noise`, yellow chapter) · Take part (`#take-part`, blue, one
+screen) · When (`#countdown`, blue machines chapter) · Beyond (`#beyond`, yellow, one screen) · footer.
+
+- **Fields:** a `.field` section is NOT positioned, so its background paints BELOW the 3D canvas
+  (fixed, z-index 0, first child of body); every direct child is `position: relative; z-index: 1`.
+  A slot is transparent, so a drawing appears on the field itself. Never position a `.field` or
+  `main`, never give a wrapper an opaque background, or every scene inside disappears.
+  `.field.screen` = at least one screen, content centred; `.field.chapter-field` = no padding.
+- **Full-screen chapters** (`components/three/SceneChapter.vue`, `<ThreeSceneChapter>`): the scene
+  fills a sticky 100svh stage edge to edge; the default slot's `.chapter-panel`s scroll over ONE
+  side (`side="left|right"`). Panels are opaque (text never sits on a moving frame; a panel may
+  carry `field-blue|yellow|ink`, else it takes `--chapter-ground`). The panels column is pulled
+  up with `margin-top: -100svh` — NOT a negative margin on the sticky stage, which shrinks its
+  sticky box to nothing and pins it a whole screen past the chapter, over the next section.
+  Panels emit `progress` (continuous, 0..n-1, as each panel's centre crosses mid-screen) and
+  `stepActions[i]` runs a scene action when panel i is reached. Caption, hint and keyboard
+  controls sit in the dock at the top of the stage (bottom of the focus box on phones).
+- **Focus box** (`fit()` in `core/stage.ts`): a slot's `data-focus="x0 x1 y0 y1"` (fractions)
+  makes the scene's `resize(w, h)` receive the BOX size, and a `setViewOffset` extends the same
+  camera over the rest of the slot. Scenes frame their subject for the box and must build a world
+  that runs past every screen edge (floor/wall/water/horizon, test at 2560x1080). Pointer NDC stays
+  slot-relative (correct for raycasting); a scene's own px (hover labels, `heroAnchors`) come out
+  scaled by the box, so the page divides them by the box's width/height fractions
+  (`SceneChapter` callout, `HeroLeaders`). Desktop boxes: hero `0.46 1 0 1`, bench `0 0.6 0 1`,
+  others `0.44 1 0 1` (the panels' right edge stays left of it); phones (<= 740px) `0 1 0 0.6`;
+  the hero below 900px wide or 560px tall stacks under
+  the words with no box. `/lab/<scene>?focus=0.44+1+0+1` outlines the box.
+- **Scroll-driven shots:** `electronics/shots.ts` and `backwater/shots.ts` export `SHOTS` and a
+  plain `scrollShot = { progress }` that the chapter writes (`Bench.vue`, `Kochi.vue`); the scene
+  eases toward it without overshoot. The panel count must equal `SHOTS.length`.
+- **Headings in boxes size to the box:** chapter panels and stall boards are size containers
+  (`container-type: inline-size`) and their display headings use `cqi` units, so a long word
+  ("ELECTRONICS", "RESTORATION") never runs out of its panel. Check with `npm run check:overflow`.
+  A display heading in a GRID CELL is the same problem (Beyond's "BEYOND", the form titles):
+  wrap it in a `container-type: inline-size` div and size it in `cqi` from the word's measured
+  em width (BEYOND 5.3em, INVOLVED 6.7em, VOLUNTEER 7.9em). check:overflow now tests every text
+  run against its own block too, on `/`, `/interestform` and `/volunteer`, 320 to 3840 wide.
+- **Big screens:** from 1920px wide `html { font-size: max(100%, 100vw / 120) }` (16px at 1920,
+  32px at 3840), and the wrap is `82.5rem`, so 2K/4K monitors and TVs get the 1920 layout scaled
+  up, not a small column. px-built chrome steps with it: the rail `zoom`s 1.25/1.5/2 at
+  2400/2880/3600px and `--rail-h` follows (70/84/112px). Size new layout in rem, not px.
+- **Domains** (`components/home/Domains.vue`) is a pinned "faire aisle": one striped-awning stall
+  per discipline, scrolled sideways while the section is pinned (height = screen + row overflow);
+  focusing a stall's link scrolls the page to it. No JS / row fits: a plain sideways-scrolling row.
+  The copy says "domain" (meter: "Domain 03 / 14"); "stall" is only the drawing and class names.
+- **No coplanar faces (z-fighting).** Two same-facing faces on one plane shimmer as the camera
+  moves (the far shore's land and its stone edge did, under scroll). Stop one block short or sink
+  it into its neighbour; `test-backwater.ts` samples every face of the ground, boom and stones.
+- **Form pages** (`/interestform`, `/volunteer`, shared `form-sheet.css` + `InterestSection.vue`):
+  a yellow title field, then the form on paper, one numbered section per 2px rule (big blue
+  figure + head pinned beside its fields over 900px, stacked below); choice tiles fill campaign
+  blue when chosen, the focus ring goes round the tile; submit is the red key; thanks is a blue
+  panel. SheetBar hides its Home link at <= 430px (the logo goes home).
+- **One WebGL renderer** (`core/stage.ts`, multiple-scenes pattern, scissor per slot, only visible
+  slots simulate). `<ThreeSceneSlot>` SSRs a poster `<picture>` and imports three.js after load +
+  idle; reduced motion, Save-Data and no-WebGL never import it.
+- **Scenes** (`scenes/index.ts`):
+  - `hero` — the WHOLE first screen is the playground (no focus box): a 10 cm 3D diorama board
+    whose top is exact #FFE86C (unlit shader), ochre faces, slotted-beam lips. Data-driven cast
+    (`FACTORIES` + `CAST_WIDE` / `CAST_PHONE`, `castFor`): Makey, two Open-Duck-Mini ducks, an
+    Ascento-style wheel-legged balancer and a Go2-style dog (phone: Makey + duck). Default activity is
+    FOOTBALL (two teams, keepers, shots, seeded clashes about every 10–20 s, goal celebrations, a ramp
+    the wheel-leg jumps off); robots fall and get up their own way. The pointer is DELIBERATE only:
+    moving it changes nothing (tested bitwise); a click/tap or a 1.2 s rest sets one cyan target the
+    nearest robots go to; grab-and-fling stays. **Text is a separate zone:** `Hero.vue` publishes
+    the logo, words block, key box, hint and nav rail as `heroKeepOut` rects (core/signal.ts,
+    fractions of the slot); the scene raises a plinth under each and treats it as a solid wall, so no
+    robot, ball or block is ever drawn over the text (tested). `heroAnchors` ids are `${kind}-${n}`;
+    `HeroLeaders` numbers 01 Makey, 02 duck, 03 balancer, 04 dog.
+  - `backwater` — cheena vala worked by two fishers (overhand rope grips, hand over hand ~20 cm a
+    stroke, eyes on the net via `lookAt(net, { priority: 'target' })`); the catch (karimeen-style fish,
+    seeded, some dips empty) comes up in the net and one fisher scoops it with a 9 m pole from a rack
+    beside his hip into an open basket. Coconuts fall on their own every 12–18 s and hit the bank
+    people (kid, watcher, visitor), each with a kind reaction. Four scroll shots (`backwater/shots.ts`, a PERSPECTIVE
+    camera, 40° FOV, fitted by projected bounds): the machine from the shore at eye level, the balance
+    (pivot, counterweights, haulers), the catch (fixed frame on the lifted net: it sinks out of frame and
+    rises back with the fish), the bank. Keep-away rule: with perspective, anything near the camera but
+    outside the focus box renders huge across the full-bleed slot, so every shot keeps people >= 6.6 m
+    and palm trunks >= 8.5 m from the camera over the WHOLE slot (tested). Nothing moves without a cause.
+  - `workshop` — a carpenter seen three-quarter front: saw, plane, mallet + chisel worked with
+    wrapped grips (people `setHandTarget` axis/kind), weight moving with each stroke, eyes on the cut,
+    walking between stands; exploded stool; full room. Tests check arm/torso clearance, elbow side,
+    wrist limits, palm facing, fingers clear of tools and hand/shoulder speed.
+  - `electronics` — a maker's corner (pegboard, racks, drill press, mitre saw, monitor, meter,
+    magnifier lamp) with a seated maker soldering; four shots.
+  - `noise` — noise machine + pen plotter (feeds `noiseSignal`).
+  - `machines` — THE countdown: a yellow split-flap counter (DD HH over MM SS, Dela Gothic figures,
+    the seconds flap falls every second) driven by a gear train and red crank, on the blue field (When
+    is a `field-blue` chapter; the scene paints its floor exactly #2B19D9 with an unlit quad, as the
+    hero paints #FFE86C).
+- **People** (`app/three/people/`): skinned bodies with blended joints (7.5-head canon), faces,
+  hands with finger bones, garments (shirt, kurta, mundu/lungi/folded with kasavu, skirt, hijab,
+  apron), seeded looks and varied rest poses (`style.ts`). Grips: `setHandTarget(side, { position,
+  normal?, elbow?, axis?, kind: 'wrap'|'pinch'|'flat', radius? })`; wrist limits, hand <= 4 m/s and
+  shoulder <= 1 m/s, hand/head and hand/hand clearance are enforced by the library. Gaze:
+  `lookAt(t, { priority: 'target' })` keeps eyes on the work (any options object also TRACKS a
+  moving target; plain `lookAt(t)` does not). Never run
+  `disposeGeometries` over a person: people share geometry; call `person.dispose()`.
+- **Robots** (`app/three/robots/`): `balancer/` wheel-legged, physically simulated (LQR gains
+  scheduled on leg length, committed; `npx tsx scripts/tune-balance.ts` regenerates and cross-checks
+  them); `duck/` kinematic IK gait + real falls; `dog/` and
+  `makey/` share `dog/stepper|script|rig|kin.ts`. All implement `robots/types.ts`.
+- **Determinism, motion, keyboard, sound, signals, Pretext, easter eggs, PageLoader, start-up
+  cost:** unchanged from the first revamp: fixed 5 ms steps (`core/clock.ts`), seeded `core/rng.ts`;
+  ONE motion state (`useMotion`; templates read `view`, logic reads `state`); every pointer
+  interaction has a button calling `action(name)` with a polite live region; audio only through
+  `soundContext()`; easter eggs typed "dance"/"conga", Konami, logo x5, a minute idle.
+
+Dev tools:
+
+```bash
+npm run dev                      # then /lab/<scene>[?focus=x0+x1+y0+y1] (dev only; 404 in production)
+npm run shot -- <url> <out.png> [--sample 3000 --cpu 4] [--move x,y] [--tap x,y] [--reduced] [--webgl-off]
+npm run posters                  # regenerate public/img/scenes/* (dev server running); renders each scene
+                                 # at screen shape WITH its chapter's focus box
+npm run test:three               # balance + gait + collisions, then test:scenes
+npm run test:scenes              # every scene + people (dog and Makey: npx tsx scripts/test-dog.ts / test-makey.ts)
+npm run test:contrast            # every colour pair the site paints, WCAG thresholds
+npm run check:overflow           # (dev server running) no text runs out of its panel/stall/page at 12 widths
+```
+
+**Regenerate the posters whenever a scene's look or poster pose changes**; they are what
+reduced-motion, Save-Data and no-WebGL visitors see, and what everyone sees before the first frame.
+
+Budgets per slot (`npm run shot -- … --sample`): hero <= 130 draw calls desktop (it runs at ~125) / 70 phone,
+backwater <= 75, others <= 70; <= 80k triangles per scene (hero <= 100k). The lab draws each scene
+twice (full + 96px thumbnail), so halve its stats. The lab thumbnail can go blank under `?focus=`
+because the full-bleed slot draws over it; the homepage has no overlapping slots.
+
+The **2026-09 control-panel hero** (`MakerSchematic.vue`) was deleted in this revamp; the
+notes below about it, and everything under "The hero is a live vector scene", are history.
+`usePanelSound.ts` stays: the rail's key sounds use it and `playMachine('servo')` voices the
+robots.
+
+## History: "control panel / drawing sheet" (2026-09, superseded by the 3D revamp)
 
 **The hero is now `app/components/hero/MakerSchematic.vue`, NOT `HeroScene.server.vue`.**
 The Open Peeps scene and its `remotion/` pipeline are no longer rendered anywhere
@@ -68,24 +215,22 @@ node .output/server/index.mjs      # PORT=3000 by default
 
 ## Design system invariants
 
-These are **contrast requirements, not preferences**. Each was measured; changing one
-silently breaks WCAG. Tokens live in `app/assets/css/main.css`.
+These are **contrast requirements, not preferences**. `npm run test:contrast` measures every
+pair; a pair belongs to its GROUND, so add the new ground there when one moves.
 
 | Token | Value | Rule |
 |---|---|---|
-| `--color-red` | `#ED1C24` | Logo and display type **≥24px only**. On white it is 4.38:1 — it clears the 3:1 large-text bar and nothing else. |
-| `--color-red-cta` | `#C4121A` | **Every red fill sitting behind a label**, and any small red text on light. White on it is 6.09:1. |
-| `--color-red-on-dark` | `#FF5A5F` | Red **text on ink/charcoal**. `--color-red` on ink is only 3.32:1. |
-| `--color-cyan` | `#00AEEF` | **Structural only** on light grounds — fills, rules, icons. **Never text on white** (2.53:1, fails even the large-text floor). Fine as text on dark (5.75–6.52:1). |
-| `--color-muted` | `#5A6169` | Secondary text **on light only** (6.27:1). |
-| `--color-muted-on-dark` | `#A8AEB5` | Secondary text **on dark** (6.50:1). `--color-muted` on ink is 2.32:1. |
+| `--pn-enamel` (paper) | `#F6F6F3` | Page ground. Ink on it 14.7:1, `--pn-label` 6.9:1. |
+| `--color-red` | `#ED1C24` | Logo and display type **≥24px only** (4.05:1 on paper). |
+| `--color-red-cta` | `#C4121A` | **Every red fill behind a label** and any small red text (5.6:1 on paper; white on it 6.1:1). |
+| `--color-red-on-dark` | `#FF5A5F` | Red **text on ink/charcoal**. |
+| `--color-cyan` | `#00AEEF` | **Structural only** on light grounds (2.34:1 on paper): fills, rules, icons. Never text or a focus ring on paper. Fine on dark. |
+| `--color-cyan-text` / `--focus-ring` | `#006E9B` | Cyan as text or focus ring on light grounds (≥4.6:1 on paper and every light tint). |
+| `--lh-display` | `1.08` | Every multi-line Dela Gothic One setting. Its caps collide below ~1.05. |
 
-Common regression: "simplify" `--color-red-cta` back to `--color-red` on a button. That
-drops the CTA to 4.38:1, which fails — a 14.4px bold label is **not** WCAG large text
-(that needs 18.66px bold or 24px regular).
-
-`--color-yellow` was **retired**. Do not reintroduce it; the palette is deliberately
-two-accent (red + cyan), matching the makerfairerome.eu reference.
+Dela Gothic One is single-weight: `font-synthesis: none` is on, and display rules use `font-weight: 400`
+— never ask for a bolder display face (the browser would fake it). Campaign field pairs (blue on yellow
+7.58, white on blue 9.36, label #D8D4FF on blue 6.59, red CTA on yellow 4.93) are in the audit.
 
 ## Gotchas worth not rediscovering
 
@@ -651,8 +796,8 @@ whispered. Both are fixed, and the ranking is the point — not the specific siz
 
 - `.countdown-date` is deliberately **`--font-body` 700, not `--font-headline`**. Bungee
   wraps mid-date at 390px and reads shoutier than a date needs to be.
-- **A date range needs TWO `<time>` elements.** `<time datetime="2027-01-26T09:00">26 – 27
-  January 2027</time>` tells a parser the whole range happens at one instant. `EVENT` in
+- **A date range needs TWO `<time>` elements.** `<time datetime="2027-02-05T09:00">5 – 6
+  February 2027</time>` tells a parser the whole range happens at one instant. `EVENT` in
   `useCountdown.ts` carries `rangeStart`/`rangeEnd`, each with its own ISO date.
 - **Event facts live in `EVENT`**, not in templates. They were typed separately into
   `MakerCountdown.vue` and `NetHero.vue`, which is how a date gets corrected in one and

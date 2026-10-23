@@ -1,18 +1,18 @@
 import { computed, onMounted, onUnmounted } from 'vue'
 
-/** Maker Faire Kochi 2027 — Jan 26, 09:00 IST. */
-export const EVENT_START = new Date('2027-01-26T09:00:00+05:30')
+/** Maker Faire Kochi 2027 — Feb 5, 09:00 IST. */
+export const EVENT_START = new Date('2027-02-05T09:00:00+05:30')
 
 /**
  * The faire is two days, and without an end the site has no way to stop saying
  * "The Faire is on. Come and see." — it would have said that every day from
- * 26 January 2027 onward, forever.
+ * 5 February 2027 onward, forever.
  */
-export const EVENT_END = new Date('2027-01-27T18:00:00+05:30')
+export const EVENT_END = new Date('2027-02-06T18:00:00+05:30')
 
 /**
  * The event's facts in one place. These strings were previously typed out
- * separately in MakerCountdown.vue and hero/NetHero.vue, which is how a date
+ * separately in the countdown and the hero, which is how a date
  * gets corrected in one of them and not the other.
  *
  * `nuxt.config.ts` deliberately keeps its own literals: the head config is
@@ -21,24 +21,24 @@ export const EVENT_END = new Date('2027-01-27T18:00:00+05:30')
 export const EVENT = {
   /**
    * One entry per day, each with its own ISO date. A range needs TWO <time>
-   * elements: `<time datetime="2027-01-26T09:00">26 – 27 January 2027</time>`
+   * elements: `<time datetime="2027-02-05T09:00">5 – 6 February 2027</time>`
    * tells a parser the whole range happens at one instant, which is a lie.
    */
-  rangeStart: { iso: '2027-01-26', label: '26', heroLabel: 'Jan 26' },
-  rangeEnd: { iso: '2027-01-27', label: '27 January 2027', heroLabel: '27, 2027' },
+  rangeStart: { iso: '2027-02-05', label: '5', heroLabel: 'Feb 5' },
+  rangeEnd: { iso: '2027-02-06', label: '6 February 2027', heroLabel: '6, 2027' },
   gatesLabel: 'Gates open at 9:00 AM IST',
   place: 'Kochi, Kerala',
   placeLocality: 'Kochi',
   placeRegion: 'Kerala',
   placeCountry: 'IN',
   /**
-   * The venue is genuinely undecided, and saying so is better than implying
-   * "Kochi, Kerala" IS the venue. It is stated on the page rather than left to
-   * inference, because "where exactly" is the second question anyone asks after
-   * "when".
+   * The venue, confirmed by the owner on 2026-10-22. Stated on the page with its
+   * map link, because "where exactly" is the second question anyone asks after
+   * "when". The street address is not stated here: only the name and the map.
    */
-  venueLabel: 'Venue to be announced',
-  /** Admission is free. Also emitted as a schema.org Offer -- see MakerCountdown. */
+  venueLabel: 'The Grounds @ Chakola Mill',
+  venueMapUrl: 'https://maps.app.goo.gl/2oxa6AnE5HrnsaJ17',
+  /** Admission is free. Also emitted as a schema.org Offer -- see components/home/When.vue. */
   admissionLabel: 'Free entry',
 } as const
 

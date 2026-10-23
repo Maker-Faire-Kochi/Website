@@ -16,7 +16,7 @@ interface Spark { x: number, y: number, a: number, t0: number, color: string }
 const canvas = ref<HTMLCanvasElement | null>(null)
 const sparks: Spark[] = []
 let raf = 0
-const COLORS = ['#00AEEF', '#0A0A0A', '#ED1C24']
+const COLORS = ['#00AEEF', '#222222', '#ED1C24']
 
 function resize() {
   const c = canvas.value
@@ -52,7 +52,7 @@ function draw(now: number) {
 }
 
 function onDown(e: PointerEvent) {
-  if (e.button !== 0) return
+  if (e.button !== 0 || motion.value !== 'running') return
   if (!(e.target as Element | null)?.closest?.(props.selector)) return
   const now = performance.now()
   const color = COLORS[Math.floor(Math.random() * COLORS.length)]!
@@ -62,8 +62,10 @@ function onDown(e: PointerEvent) {
   if (!raf) raf = requestAnimationFrame(draw)
 }
 
+const { state: motion } = useMotion()
+
 onMounted(() => {
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  if (motion.value === 'reduced') return
   resize()
   window.addEventListener('resize', resize)
   document.addEventListener('pointerdown', onDown)

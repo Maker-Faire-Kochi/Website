@@ -38,9 +38,9 @@ useHead({
 .a-panel {
   min-width: 0;
   padding: 1.1rem 1.25rem 1.35rem;
-  background: #fff;
+  background: var(--pn-enamel);
   border: 1px solid var(--pn-ink);
-  box-shadow: 3px 3px 0 rgba(10, 10, 10, 0.08);
+  box-shadow: 0 1px 2px rgba(34, 34, 34, 0.06), 0 10px 28px rgba(34, 34, 34, 0.08);
 }
 .a-head {
   display: flex;
@@ -48,7 +48,7 @@ useHead({
   gap: 0.75rem;
   margin: 0 0 1.1rem;
   padding-bottom: 0.6rem;
-  border-bottom: 1px solid rgba(10, 10, 10, 0.15);
+  border-bottom: 1px solid rgba(34, 34, 34, 0.15);
 }
 .a-fig {
   flex-shrink: 0;
@@ -58,13 +58,12 @@ useHead({
   letter-spacing: 0.08em;
   text-transform: uppercase;
   /* Cyan fails as text on white (2.53:1); this darker blueprint is 5.0:1. */
-  color: #0077A8;
+  color: var(--color-cyan-text);
 }
 .a-title {
   margin: 0;
   font-family: var(--font-panel);
-  font-stretch: 62%;
-  font-weight: 800;
+  font-weight: 400;
   font-size: 1.15rem;
   line-height: 1.1;
   text-transform: uppercase;
