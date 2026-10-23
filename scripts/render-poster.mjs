@@ -19,14 +19,16 @@ import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright-core'
 import sharp from 'sharp'
 
-const CHAPTER = { desktop: 16 / 10, focus: '0.44 1 0 1', phone: 430 / 932, phoneFocus: '0 1 0 0.6' }
+// The chapters' boxes stop at the dock's top, as the page measures them (SceneChapter.vue): about
+// 0.74 of a 16:10 desktop's height and about 0.4 of a phone's (above the dock and the pinned band).
+const CHAPTER = { desktop: 16 / 10, focus: '0.44 1 0 0.74', phone: 430 / 932, phoneFocus: '0 1 0 0.4' }
 const SCENES = {
   // The hero is the whole first screen with no focus box (the words are keep-out walls); on a
-  // phone it stacks under the words.
-  hero: { desktop: 16 / 10, focus: '', phone: 390 / 574, phoneFocus: '' },
+  // phone it stacks under the headline, sized to the mat (80vw tall).
+  hero: { desktop: 16 / 10, focus: '', phone: 1 / 0.8, phoneFocus: '' },
   backwater: CHAPTER,
   workshop: CHAPTER,
-  electronics: { ...CHAPTER, focus: '0 0.6 0 1' },
+  electronics: { ...CHAPTER, focus: '0 0.6 0 0.7' },
   noise: CHAPTER,
   machines: CHAPTER,
 }

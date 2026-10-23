@@ -43,6 +43,8 @@ const at = ref(1)
 
 let distance = 0
 let raf = 0
+/** Each stall's centre (px from the screen's left) with the row unmoved: measured per layout, not per scroll frame. */
+let centres: number[] = []
 
 function layout() {
   const el = track.value
@@ -53,6 +55,10 @@ function layout() {
   // Measured unpinned: the row's own size against the screen (clientWidth: no scrollbar).
   const vw = document.documentElement.clientWidth
   distance = Math.max(0, el.scrollWidth - vw)
+  centres = [...el.querySelectorAll<HTMLElement>('.stall')].map((s) => {
+    const r = s.getBoundingClientRect()
+    return r.left + r.width / 2
+  })
   const rail = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--rail-h')) || 58
   const fits = el.offsetHeight <= window.innerHeight - rail - 48
   pinned.value = distance > 0 && fits && motion.value !== 'reduced'
@@ -75,13 +81,15 @@ function update() {
   const top = box.top
   const p = Math.min(1, Math.max(0, -top / Math.max(1, distance)))
   progress.value = p
-  t.style.transform = `translate3d(${(-p * distance).toFixed(1)}px, 0, 0)`
+  const shift = p * distance
+  t.style.transform = `translate3d(${(-shift).toFixed(1)}px, 0, 0)`
+  // From the cached centres, not fresh rects: reading layout right after writing the transform
+  // forced a synchronous layout on every scroll frame while the aisle was pinned.
   const mid = document.documentElement.clientWidth / 2
   let best = 1
   let bestD = Infinity
-  t.querySelectorAll<HTMLElement>('.stall').forEach((s, i) => {
-    const r = s.getBoundingClientRect()
-    const d = Math.abs(r.left + r.width / 2 - mid)
+  centres.forEach((c, i) => {
+    const d = Math.abs(c - shift - mid)
     if (d < bestD) {
       bestD = d
       best = i + 1

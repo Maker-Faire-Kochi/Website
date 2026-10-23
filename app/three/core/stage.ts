@@ -131,6 +131,8 @@ interface Slot {
 
 const MAX_PIXELS = 2.5e6
 const FRAME_SAMPLES = 240
+/** Most a slot's simulation may take of one frame (FixedClock.advance): a slow phone slows the motion a moment instead of stuttering. */
+const STEP_BUDGET_MS = 8
 
 export interface StageStats {
   calls: number
@@ -423,7 +425,7 @@ class Stage {
         }
         for (const p of s.queue) s.inst.pointer?.(p)
         s.queue.length = 0
-        const alpha = s.clock.advance(now, () => s.inst.step(DT))
+        const alpha = s.clock.advance(now, () => s.inst.step(DT), STEP_BUDGET_MS)
         s.inst.frame(alpha)
         animating = true
       }

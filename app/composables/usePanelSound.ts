@@ -250,6 +250,12 @@ export function usePanelSound() {
     enabled.value = !enabled.value
     localStorage.setItem(STORAGE_KEY, enabled.value ? '1' : '0')
     playToggle(enabled.value)
+    // Off silences what is already sounding too (a scene's running loop), not
+    // just what starts next: the shared context is suspended once the toggle's
+    // own click has played. The next sound after On resumes it (audio()).
+    if (!enabled.value) setTimeout(() => {
+      if (!enabled.value) ctx?.suspend()
+    }, 200)
   }
 
   return { enabled, toggle }

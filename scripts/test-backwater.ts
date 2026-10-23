@@ -787,10 +787,12 @@ function tailDistance(i: number, p: THREE.Vector3) {
     kite: crew.fitPoints.map(v => [v.x, v.y, v.z] as V3),
   }
   assert(SHOTS.map(s => s.id).join(',') === 'wide,fishers,net,bank', `four shots in the chapter's order (${SHOTS.map(s => s.id).join(', ')})`)
-  // The focus boxes: desktop 0.44-1 of 1440x900 and of 2560x1080 (21:9), phone 0-0.6 of 390x844.
-  const aspects = [0.56 * 1440 / 900, 0.56 * 2560 / 1080, 390 / (0.6 * 844)]
-  // The focus boxes' heights in px (desktop 900 and 1080 tall, phone 0.6 x 844), for how big a fish draws.
-  const boxPx = [900, 1080, 0.6 * 844]
+  // The focus boxes as the page measures them (the box stops at the dock's top, SceneChapter.vue):
+  // desktop 0.44-1 x 0-0.742 of 1440x900 and 0.44-1 x 0-0.727 of 2560x1080 (21:9), phone 0-0.439 of 390x844.
+  const BOX_H = [0.742, 0.727, 0.439]
+  const aspects = [0.56 * 1440 / (BOX_H[0]! * 900), 0.56 * 2560 / (BOX_H[1]! * 1080), 390 / (BOX_H[2]! * 844)]
+  // The focus boxes' heights in px, for how big a fish draws.
+  const boxPx = [BOX_H[0]! * 900, BOX_H[1]! * 1080, BOX_H[2]! * 844]
   let inside = true
   let fishersFill = Infinity
   const fishPx: number[] = []
@@ -821,10 +823,12 @@ function tailDistance(i: number, p: THREE.Vector3) {
       const head = project(frames[1]!, [g.x, g.y + g.h, g.z], aspect)
       fishersFill = Math.min(fishersFill, (head[1] - feet[1]) / 2)
     }
-    // The hero shot: the machine fills most of the box's height (its projected extent over the box).
+    // The hero shot: the machine fills the box along whichever side limits it (a three-quarter view is
+    // as wide as it is tall, so on a wide box its height does, on a narrow one its width).
     {
-      const vs = machineSubject().map(p => project(frames[0]!, p, aspect)[1])
-      wideFill.push((Math.max(...vs) - Math.min(...vs)) / 2)
+      const pr = machineSubject().map(p => project(frames[0]!, p, aspect))
+      const span = (k: 0 | 1) => (Math.max(...pr.map(q => q[k])) - Math.min(...pr.map(q => q[k]))) / 2
+      wideFill.push(Math.max(span(0), span(1)))
     }
   }
   assert(inside, 'each detail shot keeps its subject inside the focus box at desktop, 21:9 and phone (the lifted net with its catch)')
@@ -836,9 +840,10 @@ function tailDistance(i: number, p: THREE.Vector3) {
   // the kite stands at most 45% of the slot's height.
   {
     const slots = [
-      { name: '1440x900', aspect: aspects[0]!, u0: -1 - 2 * 0.44 / 0.56, v0: -1 },
-      { name: '2560x1080', aspect: aspects[1]!, u0: -1 - 2 * 0.44 / 0.56, v0: -1 },
-      { name: 'phone', aspect: aspects[2]!, u0: -1, v0: -1 - 2 * 0.4 / 0.6 },
+      // Below the box: the dock and the nav's band (desktop), the dock and the panels' (phone).
+      { name: '1440x900', aspect: aspects[0]!, u0: -1 - 2 * 0.44 / 0.56, v0: -1 - 2 * (1 - BOX_H[0]!) / BOX_H[0]! },
+      { name: '2560x1080', aspect: aspects[1]!, u0: -1 - 2 * 0.44 / 0.56, v0: -1 - 2 * (1 - BOX_H[1]!) / BOX_H[1]! },
+      { name: 'phone', aspect: aspects[2]!, u0: -1, v0: -1 - 2 * (1 - BOX_H[2]!) / BOX_H[2]! },
     ]
     type Thing = { name: string, pts: V3[], near: number, tall: boolean }
     const things: Thing[] = []
@@ -881,8 +886,9 @@ function tailDistance(i: number, p: THREE.Vector3) {
     }
     assert(worstNear >= 0 && worstTall <= 0.45, `nothing looms anywhere in the full slot, at every shot and screen: people and the kite 6+ m from the camera and at most 45% of the slot's height, palms 8+ m (tallest ${(worstTall * 100).toFixed(0)}%, closest margin ${worstNear.toFixed(1)} m${worst ? `; ${worst}` : ''})`)
   }
-  // (60 px at desktop: the frame also holds the boom's tip and the spreader poles above the net.)
-  assert(fishPx[0]! >= 60 && fishPx[1]! >= 60 && fishPx[2]! >= 35, `the net shot is close on the catch: the shortest fish is ${fishPx.map(x => x.toFixed(0)).join(' / ')} px long at 1440x900 / 2560x1080 / phone (at least 60 / 60 / 35)`)
+  // (45 px at desktop: the frame also holds the boom's tip and its spreader poles through the whole dip,
+  // so the machine never leaves it while the net is down, and the box stops at the dock's top.)
+  assert(fishPx[0]! >= 45 && fishPx[1]! >= 45 && fishPx[2]! >= 25, `the net shot is close on the catch: the shortest fish is ${fishPx.map(x => x.toFixed(0)).join(' / ')} px long at 1440x900 / 2560x1080 / phone (at least 45 / 45 / 25)`)
   {
     const a = netFraming(1.2)
     const b = netFraming(1.2)
@@ -900,7 +906,7 @@ function tailDistance(i: number, p: THREE.Vector3) {
     const horizon = Math.tan(f.el) / Math.tan(FOV_DEG * Math.PI / 360)
     assert(eye >= 1.5 && eye <= 3, `the hero shot's camera stands at eye level, ${eye.toFixed(2)} m above the water (1.5-3 m)`)
     assert(horizon <= -1 / 3 && horizon >= -1, `the hero shot's horizon is in the lower third of the box (${((1 - horizon) / 2 * 100).toFixed(0)}% down)`)
-    assert(wideFill[0]! >= 0.7 && wideFill[0]! <= 0.85 && wideFill.every(x => x >= 0.6), `the hero shot's machine fills most of the box: ${wideFill.map(x => (x * 100).toFixed(0)).join(' / ')}% of its height at 1440x900 / 2560x1080 / phone (70-85% at desktop, 60%+ everywhere)`)
+    assert(wideFill.every(x => x >= 0.8 && x <= 0.98), `the hero shot's machine fills the box along its limiting side: ${wideFill.map(x => (x * 100).toFixed(0)).join(' / ')}% at 1440x900 / 2560x1080 / phone (80-98%)`)
     // ... seen against the sky from below: the A-frame's top and the raised tip above the horizon.
     const tip = project(f, boomToWorld([BOOM.front, 0, 0], THETA_UP) as V3, aspects[0]!)
     const apex = project(f, FULCRUM as V3, aspects[0]!)

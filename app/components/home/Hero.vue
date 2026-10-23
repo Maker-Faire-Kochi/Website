@@ -463,12 +463,46 @@ const { onLogoClick } = useEasterEggs((egg) => {
     margin-bottom: 0;
   }
 
+  /* The words' parts become the column's own items, so the playground sits
+     right under the headline and the three facts: a phone's first screen
+     shows the robots, not only text. (Nothing is kept out when stacked, so
+     the words block needs no box of its own.) */
+  .hero-grid,
+  .hero-copy {
+    display: contents;
+  }
+
+  .hero-copy > * {
+    margin-inline: var(--hero-gutter);
+  }
+
+  .hero-logo {
+    order: 1;
+    margin-top: 1.25rem;
+  }
+
+  .hero-title { order: 2; }
+  .hero-claim { order: 3; }
+  .hero-facts { order: 4; }
+
+  .hero-def {
+    order: 6;
+    margin-top: 1rem;
+  }
+
+  .hero-actions {
+    order: 7;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Sized to the mat, a landscape shape: a tall box only added empty field above and below it. */
   .hero-stage {
-    order: 2;
+    order: 5;
     position: relative;
     inset: auto;
-    height: 68svh;
-    min-height: 340px;
+    height: min(68svh, 80vw);
+    min-height: 260px;
+    margin-top: 0.5rem;
   }
 
   .hero-hint {
@@ -476,7 +510,7 @@ const { onLogoClick } = useEasterEggs((egg) => {
   }
 
   .hero-under {
-    order: 3;
+    order: 8;
     position: static;
     align-items: flex-start;
     max-width: none;

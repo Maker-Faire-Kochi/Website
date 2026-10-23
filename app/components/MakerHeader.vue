@@ -167,6 +167,8 @@ onUnmounted(() => {
       >
         <Volume2 v-if="soundOn" :size="16" :stroke-width="1.75" aria-hidden="true" />
         <VolumeX v-else :size="16" :stroke-width="1.75" aria-hidden="true" />
+        <!-- Visible state where the strip has room; the switch's name stays "Sound". -->
+        <span class="rail-icon-text" aria-hidden="true">{{ soundOn ? 'Sound on' : 'Sound off' }}</span>
       </button>
     </nav>
   </div>
@@ -332,6 +334,33 @@ onUnmounted(() => {
   color: var(--pn-label);
 }
 
+/* The sound switch spells its state out, beside its icon, where the strip has room. */
+.rail-icon[role='switch'] {
+  display: inline-flex;
+  gap: 0.4rem;
+  width: auto;
+  min-width: 32px;
+  padding: 0 0.45rem;
+}
+
+.rail-icon-text {
+  font: 600 11px/1 var(--font-readout);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .rail-icon-text {
+    display: none;
+  }
+
+  .rail-icon[role='switch'] {
+    width: 32px;
+    padding: 0;
+  }
+}
+
 /* A phone: the stations are the flexible part. They lose their connectors
    and, on the narrowest screens, scroll sideways inside the strip, so the
    Get Involved key and both toggles are always whole. */
@@ -389,8 +418,10 @@ onUnmounted(() => {
     letter-spacing: 0.03em;
   }
 
-  .rail-icon {
+  .rail-icon,
+  .rail-icon[role='switch'] {
     width: 28px;
+    min-width: 0;
   }
 }
 </style>

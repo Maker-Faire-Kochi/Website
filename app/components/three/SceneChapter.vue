@@ -47,40 +47,59 @@ const active = ref(-1)
 const stage = ref<HTMLElement | null>(null)
 const dock = ref<HTMLElement | null>(null)
 /**
- * The band of the stage nothing covers, as fractions of its height. Wide
- * screens: from the dock's bottom (it sits at the top) to the floating nav's
- * top. Phones: above the dock (it sits under the scene). The focus box keeps
- * inside it, so a scene never frames its subject under the dock or the nav,
+ * Where the drawing's room ends, as a fraction of the stage's height: the top
+ * of the dock (wide screens: the bottom corner, over the nav; phones: under
+ * the scene), or of the floating nav if that is higher. The focus box stops
+ * there, so a scene never frames its subject under the dock or the nav,
  * whatever the screen and however the dock wraps.
  */
-const clear = ref<{ top: number, bottom: number } | null>(null)
+const clearTo = ref<number | null>(null)
+
+/**
+ * Phones: where the chapter's panels pin (--stick, px from the top). 54% of
+ * the screen down, or higher when the chapter's tallest panel needs it, so
+ * its last line clears the screen's foot; never above 30%. ONE pin for every
+ * panel, so a covered panel never peeks out above the one over it, and the
+ * dock (bottom: 100svh - --stick) moves up with it.
+ */
+function measureBand() {
+  const el = root.value
+  const s = stage.value?.getBoundingClientRect()
+  if (!el) return
+  if (!phone.value || !s?.height) {
+    el.style.removeProperty('--stick')
+    return
+  }
+  let tallest = 0
+  el.querySelectorAll<HTMLElement>('.chapter-panel').forEach((pane) => {
+    // Its own height, without the band-filling minimum.
+    pane.style.minHeight = '0'
+    tallest = Math.max(tallest, pane.offsetHeight)
+    pane.style.minHeight = ''
+  })
+  const stick = Math.max(0.3 * s.height, Math.min(0.54 * s.height, s.height - tallest))
+  el.style.setProperty('--stick', `${Math.round(stick)}px`)
+}
 
 function measureDock() {
   const s = stage.value?.getBoundingClientRect()
   const d = dock.value?.getBoundingClientRect()
   if (!s || !d || d.height <= 0 || s.height <= 0) {
-    clear.value = null
-    return
-  }
-  const at = (y: number) => (y - s.top) / s.height
-  if (phone.value) {
-    clear.value = { top: 0, bottom: at(d.top) }
+    clearTo.value = null
     return
   }
   // The nav is fixed to the screen, not the stage: measured up from the screen's bottom, which the pinned stage fills.
   const nav = document.querySelector('.rail-wrap')?.getBoundingClientRect()
-  clear.value = { top: at(d.bottom), bottom: nav && nav.height > 0 ? 1 - (window.innerHeight - nav.top) / s.height : 1 }
+  const navTop = nav && nav.height > 0 ? 1 - (window.innerHeight - nav.top) / s.height : 1
+  clearTo.value = Math.min((d.top - s.top) / s.height, navTop)
 }
 
 const focusNow = computed(() => {
   const base = phone.value ? props.phoneFocus : props.focus
-  const c = clear.value
-  if (!c || !base.trim()) return base
+  const to = clearTo.value
+  if (to == null || !base.trim()) return base
   const [x0 = 0, x1 = 1, y0 = 0, y1 = 1] = base.trim().split(/\s+/).map(Number)
-  const gap = 0.015
-  const top = c.top > 0 ? Math.max(y0, c.top + gap) : y0
-  const bottom = c.bottom < 1 ? Math.min(y1, c.bottom - gap) : y1
-  return `${x0} ${x1} ${top.toFixed(3)} ${bottom.toFixed(3)}`
+  return `${x0} ${x1} ${y0} ${Math.min(y1, to - 0.015).toFixed(3)}`
 })
 /** The focus box as fractions: hover labels come out scaled by its size. */
 const box = computed(() => {
@@ -98,24 +117,41 @@ async function run(action: string) {
 /* ── Steps ── */
 let raf = 0
 
+const clamp01 = (x: number) => Math.min(1, Math.max(0, x))
+/** A pinned (phone) panel's sticky top, in px. */
+const pinTop = (el: HTMLElement) => Number.parseFloat(getComputedStyle(el).top) || 0
+
 function measure() {
   raf = 0
   const items = root.value?.querySelectorAll<HTMLElement>('.chapter-panel')
   if (!items?.length) return
-  const mid = window.innerHeight * 0.5
   let p = -1
-  items.forEach((el, i) => {
-    const r = el.getBoundingClientRect()
-    const centre = r.top + r.height / 2
-    if (centre > mid) return
-    p = i
-    const next = items[i + 1]
-    if (next) {
-      const n = next.getBoundingClientRect()
-      const nc = n.top + n.height / 2
-      p = i + Math.min(1, Math.max(0, (mid - centre) / Math.max(1, nc - centre)))
-    }
-  })
+  if (phone.value) {
+    // Phones: a panel's step begins when it reaches its pin in the band; the next panel's rise,
+    // from the screen's foot to its own pin, carries the fraction between.
+    const h = window.innerHeight
+    items.forEach((el, i) => {
+      if (el.getBoundingClientRect().top > pinTop(el) + 1) return
+      p = i
+      const next = items[i + 1]
+      if (next) p = i + clamp01((h - next.getBoundingClientRect().top) / Math.max(1, h - pinTop(next)))
+    })
+  }
+  else {
+    const mid = window.innerHeight * 0.5
+    items.forEach((el, i) => {
+      const r = el.getBoundingClientRect()
+      const centre = r.top + r.height / 2
+      if (centre > mid) return
+      p = i
+      const next = items[i + 1]
+      if (next) {
+        const n = next.getBoundingClientRect()
+        const nc = n.top + n.height / 2
+        p = i + clamp01((mid - centre) / Math.max(1, nc - centre))
+      }
+    })
+  }
   emit('progress', Math.max(0, p))
   const step = Math.floor(p)
   if (step === active.value && !missed) return
@@ -185,11 +221,16 @@ function calloutOff(e?: PointerEvent) {
 }
 
 let mq: MediaQueryList | null = null
+function measureLayout() {
+  measureDock()
+  measureBand()
+}
+
 const onMq = () => {
   phone.value = Boolean(mq?.matches)
-  measureDock()
+  measureLayout()
 }
-// The dock wraps differently at every width, and the display face arriving late resizes it.
+// The dock and the panels wrap differently at every width, and the display face arriving late resizes them.
 let dockObserver: ResizeObserver | null = null
 
 onMounted(() => {
@@ -197,9 +238,10 @@ onMounted(() => {
   onMq()
   mq.addEventListener('change', onMq)
   window.addEventListener('scroll', onScroll, { passive: true })
-  dockObserver = new ResizeObserver(measureDock)
+  dockObserver = new ResizeObserver(measureLayout)
   if (stage.value) dockObserver.observe(stage.value)
   if (dock.value) dockObserver.observe(dock.value)
+  root.value?.querySelectorAll<HTMLElement>('.chapter-panel').forEach(el => dockObserver?.observe(el))
   measure()
 })
 
@@ -276,10 +318,12 @@ onUnmounted(() => {
   inset: 0;
 }
 
-/* Top of the stage, on the focus side: clear of the floating nav at the bottom. */
+/* The bottom corner of the stage on the drawing's side, just above the
+   floating nav: the drawing keeps the screen above it (the focus box stops at
+   the dock's top, see measureDock). */
 .chapter-dock {
   position: absolute;
-  top: clamp(1rem, 2.5vw, 2rem);
+  bottom: calc(var(--rail-h) + 1.5rem + env(safe-area-inset-bottom));
   right: clamp(1rem, 2.5vw, 2rem);
   max-width: min(34rem, 56%);
   padding: 0.9rem 1rem;
@@ -436,13 +480,22 @@ onUnmounted(() => {
   }
 }
 
-/* Phones: the scene holds the top of the screen, the panels rise over the rest. */
+/* Phones: the drawing owns the top of the screen and is NEVER covered. Each
+   panel rises from the bottom and pins in the band under the dock (sticky at
+   --stick), where the next one slides up over it: the story is told in the
+   band, the drawing above keeps playing. (Panels that rose over the whole
+   screen hid the drawing most of the way through.) */
 @media (max-width: 740px) {
+  /* measureBand() sets each chapter's own --stick in px; this is the first paint's. */
+  .chapter {
+    --stick: 54svh;
+  }
+
   .chapter-dock {
     top: auto;
     right: 0.75rem;
     left: 0.75rem;
-    bottom: calc(40svh + 0.75rem);
+    bottom: calc(100svh - var(--stick) + 0.5rem);
     max-width: none;
   }
 
@@ -454,10 +507,19 @@ onUnmounted(() => {
   .chapter-panels,
   .panels-right .chapter-panels {
     width: auto;
-    gap: 45svh;
+    gap: 50svh;
     margin: -100svh 0 0;
-    /* Room under the last panel for its centre to cross mid-screen while the stage is still pinned. */
-    padding: 62svh 0.75rem 50svh;
+    /* The first panel starts pinned. Every panel fills the band, so the last one is pinned by the
+       time the stage lets go: a short dwell on it, not a screen of empty field. */
+    padding: var(--stick) 0 12svh;
+  }
+
+  .chapter-panels > :deep(.chapter-panel) {
+    position: sticky;
+    top: var(--stick);
+    /* Fills the band to the screen's foot, so the panel under it never shows below. */
+    min-height: calc(100svh - var(--stick));
+    padding: 1.25rem 1.25rem calc(var(--rail-h) + 1.5rem + env(safe-area-inset-bottom));
   }
 }
 </style>

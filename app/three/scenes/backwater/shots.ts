@@ -65,9 +65,11 @@ const TAN_HALF = Math.tan(FOV_DEG * Math.PI / 360)
  * margin per shot; the wide shot also stands its camera at a height (m).
  */
 export const ANGLE: Record<Shot['id'], { az: number, el: number, pad: number, eye?: number }> = {
-  // From the shore, a man's eye level, looking a little UP: the counterweight end and the deck near,
-  // the boom reaching away to the net in the air; the horizon (eye level) in the lower third.
-  wide: { az: 1.3, el: -0.13, pad: 1.04, eye: 1.7 },
+  // From a boat: three-quarter on from the water off the net's end, at a man's eye level looking a
+  // little UP -- the net in the air nearest, the boom reaching back over it to the stones, the bank and
+  // its palms behind; the horizon (eye level) in the lower third. (End-on from the bank, the boom
+  // foreshortened into a tangle and hid the net; a bank-side camera stood among the palms.)
+  wide: { az: -0.55, el: -0.13, pad: 1.04, eye: 1.7 },
   // Nearly side-on to the lever, a little from the bank: pivot, stones and haulers in one view.
   fishers: { az: 0.45, el: 0.28, pad: 1.08 },
   // From over the water off the net's outer side, looking back at the machine behind it.
@@ -102,11 +104,13 @@ const dot = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 export interface Keep { p: V3, min: number }
 /**
  * How far the page extends a shot's frame beyond the focus box, in the box's
- * own -1..1 units: to its left on a desktop (box 0.44-1 of the width), below
- * it on a phone (box 0-0.6 of the height). The union of the two.
+ * own -1..1 units: to its left on a desktop (box 0.44-1 of the width), and
+ * below it, where the dock and the nav sit (the box stops at the dock's top:
+ * about 0.7 of the height on a desktop, as little as 0.4 on a small phone).
+ * The union of the two.
  */
 export const SLOT_U = -1 - 2 * 0.44 / 0.56
-export const SLOT_V = -1 - 2 * 0.4 / 0.6
+export const SLOT_V = -1 - 2 * 0.6 / 0.4
 
 /**
  * Fit a framing around points by their projected bounds: the camera (looking
@@ -298,12 +302,24 @@ export function catchSubject(): V3[] {
 }
 
 /**
- * The net shot: one fixed framing (the camera never follows the dip) close
- * on the LIFTED net, its catch filling the box. Going down the net drops out
- * of the bottom of the frame; coming up, it rises back into it with the catch.
+ * The outer end of the machine through the whole dip: the boom's tip, lifted
+ * and lowered (the spreader poles hang from it down to the net).
+ */
+export function dipSubject(): V3[] {
+  const pts: V3[] = []
+  for (const th of [THETA_UP, THETA_DOWN]) pts.push(boomToWorld([BOOM.front + 0.3, 0.3, 0], th))
+  return pts
+}
+
+/**
+ * The net shot: one fixed framing (the camera never follows the dip) on the
+ * catch, wide enough to hold the boom's tip and its spreader poles through the
+ * whole dip: lowered, the net drops out of the bottom of the frame and comes up
+ * with the catch, but the machine never leaves it. (Framed on the lifted net alone, a lowered
+ * net left a close-up of bare spreader poles over empty water.)
  */
 export function netFraming(aspect: number, out: Framing = newFraming(), keep: Keep[] = []): Framing {
-  return fitFraming(catchSubject(), ANGLE.net.az, ANGLE.net.el, aspect, ANGLE.net.pad, out, undefined, keep)
+  return fitFraming([...catchSubject(), ...dipSubject()], ANGLE.net.az, ANGLE.net.el, aspect, ANGLE.net.pad, out, undefined, keep)
 }
 
 /** The whole-machine shot for a screen shape. */

@@ -31,7 +31,22 @@ screen) · When (`#countdown`, blue machines chapter) · Beyond (`#beyond`, yell
   sticky box to nothing and pins it a whole screen past the chapter, over the next section.
   Panels emit `progress` (continuous, 0..n-1, as each panel's centre crosses mid-screen) and
   `stepActions[i]` runs a scene action when panel i is reached. Caption, hint and keyboard
-  controls sit in the dock at the top of the stage (bottom of the focus box on phones).
+  controls sit in the dock: the bottom corner on the drawing's side, just above the nav (under
+  the scene on phones; compact -- one scrolling row of chips, no hint -- on phones and screens
+  under 500px tall). **The focus box stops at the dock's top** (and the nav's): `SceneChapter`
+  measures both (ResizeObserver) and trims the box's y1, so no scene frames its subject under
+  them at any size. The props' boxes are the maximum; the live box is shorter.
+- **Phones (<= 740px): the drawing is never covered.** Each panel is `position: sticky` at the
+  chapter's `--stick` (54% down, or higher so the chapter's tallest panel fits, never above 30%;
+  `measureBand`, one pin per chapter so no covered panel peeks out) and fills the band to the
+  screen's foot; the next panel slides up over it. Steps on phones count from a panel reaching its
+  pin. The phone hero flattens its words block (`display: contents`) so the playground sits under
+  the headline and facts, sized to the mat (`min(68svh, 80vw)`).
+- **Smoothness:** every scene builds once the page is idle, in page order, one at a time
+  (`buildQueue` in `SceneSlot.vue`), not mid-scroll as a chapter nears (`near` is the fallback);
+  `FixedClock.advance` takes a wall-clock budget (stage: 8 ms per slot) so a slow phone slows the
+  motion a moment instead of spiralling into catch-up stutter; the aisle meter reads cached stall
+  centres, never fresh rects after writing the transform.
 - **Focus box** (`fit()` in `core/stage.ts`): a slot's `data-focus="x0 x1 y0 y1"` (fractions)
   makes the scene's `resize(w, h)` receive the BOX size, and a `setViewOffset` extends the same
   camera over the rest of the slot. Scenes frame their subject for the box and must build a world
@@ -89,9 +104,11 @@ screen) · When (`#countdown`, blue machines chapter) · Beyond (`#beyond`, yell
     seeded, some dips empty) comes up in the net and one fisher scoops it with a 9 m pole from a rack
     beside his hip into an open basket. Coconuts fall on their own every 12–18 s and hit the bank
     people (kid, watcher, visitor), each with a kind reaction. Four scroll shots (`backwater/shots.ts`, a PERSPECTIVE
-    camera, 40° FOV, fitted by projected bounds): the machine from the shore at eye level, the balance
-    (pivot, counterweights, haulers), the catch (fixed frame on the lifted net: it sinks out of frame and
-    rises back with the fish), the bank. Keep-away rule: with perspective, anything near the camera but
+    camera, 40° FOV, fitted by projected bounds): the machine from a boat at eye level, three-quarter
+    on from the net's end (az -0.55: end-on from the bank was a tangle, a bank-side camera stood among
+    the palms), the balance (pivot, counterweights, haulers), the catch (fixed frame on the lifted net
+    that also holds the boom's tip through the whole dip, so the machine never leaves it), the bank.
+    Tests use the dock-trimmed boxes. Keep-away rule: with perspective, anything near the camera but
     outside the focus box renders huge across the full-bleed slot, so every shot keeps people >= 6.6 m
     and palm trunks >= 8.5 m from the camera over the WHOLE slot (tested). Nothing moves without a cause.
   - `workshop` — a carpenter seen three-quarter front: saw, plane, mallet + chisel worked with
@@ -121,7 +138,9 @@ screen) · When (`#countdown`, blue machines chapter) · Beyond (`#beyond`, yell
   cost:** unchanged from the first revamp: fixed 5 ms steps (`core/clock.ts`), seeded `core/rng.ts`;
   ONE motion state (`useMotion`; templates read `view`, logic reads `state`); every pointer
   interaction has a button calling `action(name)` with a polite live region; audio only through
-  `soundContext()`; easter eggs typed "dance"/"conga", Konami, logo x5, a minute idle.
+  `soundContext()`; easter eggs typed "dance"/"conga", Konami, logo x5, a minute idle. The rail's
+  sound switch spells out "Sound on/off" over 900px wide, and Off suspends the shared
+  AudioContext, so a loop already playing stops too (not just the next sound).
 
 Dev tools:
 

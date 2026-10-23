@@ -43,12 +43,15 @@ for (const path of PAGES) for (const [w, h] of SIZES) {
       if (r.width < 1) continue
       // Its own block: the nearest non-inline ancestor (a grid cell's heading is one).
       let own = el
-      while (own && getComputedStyle(own).display.startsWith('inline')) own = own.parentElement
+      // (display: contents has no box of its own: the phone hero's words block is one.)
+      const boxless = e => /^(inline|contents)/.test(getComputedStyle(e).display)
+      while (own && boxless(own)) own = own.parentElement
       if (own) {
         const b = own.getBoundingClientRect()
         if (r.right > b.right + 2 || r.left < b.left - 2) out.push(`"${n.textContent.trim().slice(0, 40)}" runs ${Math.round(Math.max(r.right - b.right, b.left - r.left))}px outside its own <${own.tagName.toLowerCase()}>`)
       }
-      const box = el.closest(BOXES)
+      let box = el.closest(BOXES)
+      if (box && getComputedStyle(box).display === 'contents') box = null
       // The aisle scrolls sideways by design: only its boards are boxes.
       const inAisle = el.closest('.aisle-track')
       if (box) {

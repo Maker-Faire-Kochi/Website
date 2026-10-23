@@ -1,3 +1,16 @@
+<script lang="ts">
+/** Page-wide: the slots' scene builds, chained so only one runs at a time (see onMounted). */
+let buildQueue: Promise<void> = Promise.resolve()
+
+/** One idle moment of the browser's (or a short wait where there is no requestIdleCallback). */
+function idleTurn(): Promise<void> {
+  return new Promise((resolve) => {
+    if ('requestIdleCallback' in window) requestIdleCallback(() => resolve(), { timeout: 1500 })
+    else setTimeout(resolve, 200)
+  })
+}
+</script>
+
 <script setup lang="ts">
 import type { SceneName } from '~/three/scenes'
 import type { SlotHandle, SlotPointer } from '~/three/core/stage'
@@ -274,6 +287,14 @@ onMounted(() => {
     attach()
   }, { rootMargin: '50% 0px' })
   near.observe(root.value!)
+  // Ahead of that: once the page is idle, every scene builds in page order, ONE
+  // at a time, while the visitor is still reading the top of the page -- so no
+  // build lands mid-scroll as a chapter comes near (that was the scroll jank),
+  // and a fast scroll never starts several at once. `near` stays the fallback.
+  buildQueue = buildQueue.then(async () => {
+    await idleTurn()
+    if (!cancelled && !reduced()) await attach()
+  })
 })
 
 watch(state, async (s) => {

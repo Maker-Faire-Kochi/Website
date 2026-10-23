@@ -17,8 +17,16 @@ export class FixedClock {
   private acc = 0
   dropped = 0
 
-  /** Runs `step` zero or more times and returns the interpolation alpha in [0, 1). */
-  advance(nowMs: number, step: () => void): number {
+  /**
+   * Runs `step` zero or more times and returns the interpolation alpha in [0, 1).
+   * `budgetMs` caps the wall-clock time the steps may take this frame: on a
+   * slow device, a long frame would otherwise make the next one run more steps,
+   * which runs longer still -- a spiral into stutter. Past the budget the rest
+   * of the frame's time is dropped, so the motion runs a little slow for a
+   * moment instead; the step size, and so the behaviour, never changes.
+   */
+  advance(nowMs: number, step: () => void, budgetMs = Infinity): number {
+    const until = budgetMs === Infinity ? Infinity : performance.now() + budgetMs
     if (this.last === null) {
       this.last = nowMs
       return 0
@@ -37,6 +45,7 @@ export class FixedClock {
       step()
       this.acc = Math.max(0, this.acc - DT)
       n++
+      if (until !== Infinity && performance.now() > until) break
     }
     if (this.acc >= DT - EPS) {
       this.dropped += Math.floor(this.acc / DT)
