@@ -17,6 +17,9 @@
         <p class="copy beyond-copy">
           Ahead of Maker Faire Kochi 2028, TinkerHub will activate its 70-plus college chapters across Kerala, expand the roadshow into a multi-city series and grow a public Kerala Maker Directory.
         </p>
+        <p class="beyond-credit">
+          Built together by TinkerHub Foundation, MakerGram and Kerala Startup Mission.
+        </p>
       </div>
     </div>
   </section>
@@ -45,6 +48,18 @@
 
 .beyond-copy {
   margin-top: 1rem;
+}
+
+/* The page's sign-off: who built it, set off by a blue hairline. */
+.beyond-credit {
+  margin-top: 1.75rem;
+  max-width: 46ch;
+  padding-top: 1rem;
+  border-top: 2px solid var(--field-blue);
+  font-family: var(--font-readout);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--pn-ink);
 }
 
 @media (max-width: 900px) {

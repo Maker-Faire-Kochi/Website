@@ -229,9 +229,6 @@ const { onLogoClick } = useEasterEggs((egg) => {
             <a href="/interestform" class="key key-red">Get Involved</a>
             <a href="#about" class="key">Learn More</a>
           </div>
-          <p class="hero-credit">
-            Built together by TinkerHub Foundation, MakerGram and Kerala Startup Mission.
-          </p>
         </div>
       </div>
 
@@ -357,24 +354,11 @@ const { onLogoClick } = useEasterEggs((egg) => {
   text-underline-offset: 0.2em;
 }
 
-.hero-credit {
-  margin: 1rem 0 0;
-  max-width: 46ch;
-  font-family: var(--font-readout);
-  font-size: 0.875rem;
-  line-height: 1.5;
-  color: var(--pn-label);
-}
-
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
-  margin: 1.5rem 0 0;
-}
-
-.hero-credit {
-  margin-bottom: auto;
+  margin: 1.5rem 0 auto;
 }
 
 .hero-hint {
