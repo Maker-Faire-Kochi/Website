@@ -1,0 +1,280 @@
+/* The form pages in the campaign's language: a yellow field carrying the
+   title, then the form on paper, one numbered section per rule, the section
+   head beside its fields on wide screens and above them on narrow ones.
+   Imported scoped by InterestForm.vue and VolunteerForm.vue. Sections
+   (InterestSection.vue) read --at-cols / --at-gap / --field-w from .at-shell. */
+.at-shell {
+  /* One measure for every field, label and option grid. */
+  --field-w: 44rem;
+  --at-cols: minmax(0, 4fr) minmax(0, 7fr);
+  --at-gap: clamp(2rem, 5vw, 5rem);
+}
+
+/* ── The title field ── */
+.at-hero {
+  padding: clamp(3.5rem, 8vw, 7rem) 0 clamp(3rem, 6vw, 5.5rem);
+}
+
+.at-hero-in {
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+  column-gap: var(--at-gap);
+  align-items: end;
+}
+
+/* The title sizes to its box, not the screen: "VOLUNTEER" (about 7.9em) and
+   "INVOLVED" (6.7em) must fit it at every width. */
+.at-title-box {
+  container-type: inline-size;
+}
+
+.at-title {
+  font-size: min(8rem, 12.5cqi);
+}
+
+.at-lede {
+  max-width: 38ch;
+  color: var(--field-blue);
+}
+
+.at-note {
+  margin-top: 1.25rem;
+  max-width: 44ch;
+  padding-top: 1rem;
+  border-top: 2px solid var(--field-blue);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--pn-ink);
+}
+
+/* ── The form field ── */
+.at-body {
+  padding: clamp(1rem, 3vw, 2.5rem) 0 clamp(5rem, 10vw, 8rem);
+}
+
+/* ── Inputs ── */
+.at-input,
+.at-textarea {
+  display: block;
+  width: 100%;
+  max-width: var(--field-w);
+  font-family: var(--font-readout);
+  /* 16px: anything smaller makes iOS zoom the page when the field is focused. */
+  font-size: 1rem;
+  line-height: 1.4;
+  color: var(--pn-ink);
+  background: var(--color-white);
+  border: 2px solid var(--pn-ink);
+  border-radius: 0;
+  padding: 0.75rem 0.9rem;
+  min-height: 52px;
+  transition: box-shadow 160ms var(--ease-out);
+}
+
+.at-textarea {
+  min-height: 8rem;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.at-input::placeholder,
+.at-textarea::placeholder {
+  color: var(--pn-label);
+  opacity: 1;
+}
+
+.at-input:hover,
+.at-textarea:hover {
+  box-shadow: inset 0 -4px 0 var(--pn-ink);
+}
+
+.at-input:focus,
+.at-textarea:focus {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.at-input-follow {
+  margin-top: 0.75rem;
+}
+
+/* ── Choices: tiles; a chosen one fills with the campaign blue ── */
+.at-choices {
+  max-width: var(--field-w);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+  gap: 0.5rem;
+}
+
+.at-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-height: 52px;
+  padding: 0.85rem 0.95rem;
+  background: var(--color-white);
+  border: 2px solid rgba(34, 34, 34, 0.2);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1.4;
+  color: var(--pn-ink);
+  transition: border-color 160ms var(--ease-out), background-color 160ms var(--ease-out), color 160ms var(--ease-out);
+}
+
+.at-choice:hover {
+  border-color: var(--pn-ink);
+}
+
+.at-choice:has(input:checked) {
+  background: var(--field-blue);
+  border-color: var(--field-blue);
+  color: var(--on-blue);
+}
+
+/* The ring goes round the whole tile, on the paper, where it reads. */
+.at-choice:has(input:focus-visible) {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.at-choice input {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin: 1px 0 0;
+  background: var(--color-white);
+  border: 2px solid currentColor;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.at-choice input:focus-visible {
+  outline: none;
+}
+
+.at-choice input[type='radio'] {
+  border-radius: 50%;
+}
+
+.at-choice input[type='radio']:checked {
+  background: radial-gradient(circle, var(--field-blue) 0 4px, transparent 4.5px), var(--color-white);
+}
+
+.at-choice input[type='checkbox']:checked {
+  /* A blue tick in a white box, on the blue tile. */
+  background: var(--color-white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='%232B19D9' stroke-width='2.4' stroke-linecap='square'/%3E%3C/svg%3E") center / 14px 14px no-repeat;
+}
+
+/* ── Errors and submit: in the fields' column ── */
+.at-end {
+  display: grid;
+  grid-template-columns: var(--at-cols);
+  column-gap: var(--at-gap);
+  padding-top: 2.5rem;
+  border-top: 2px solid var(--pn-ink);
+}
+
+.at-end-col {
+  grid-column: 2;
+  min-width: 0;
+}
+
+.at-errors {
+  max-width: var(--field-w);
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--color-white);
+  border: 2px solid var(--color-red-cta);
+}
+
+.at-errors p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--color-red-cta);
+}
+
+.at-errors p + p {
+  margin-top: 0.35rem;
+}
+
+.at-submit {
+  min-width: 14rem;
+  min-height: 56px;
+  font-size: 1rem;
+}
+
+.at-submit:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+/* ── Received: a blue panel with the answer ── */
+.at-thanks {
+  container-type: inline-size;
+  margin-top: clamp(1.5rem, 4vw, 3rem);
+  max-width: 56rem;
+  padding: clamp(2rem, 5vw, 3.5rem);
+}
+
+.at-thanks h2 {
+  margin: 0;
+  max-width: 22ch;
+  font-family: var(--font-panel);
+  /* "APPLICATION" (about 9.6em) must fit the panel. */
+  font-size: min(var(--pn-d2), 9cqi);
+  font-weight: 400;
+  line-height: var(--lh-display);
+  text-transform: uppercase;
+  text-wrap: balance;
+  color: var(--on-blue-display);
+}
+
+.at-thanks p {
+  margin: 1.5rem 0 2rem;
+  max-width: 52ch;
+  font-size: 1.125rem;
+  line-height: 1.6;
+}
+
+.at-hp {
+  position: absolute;
+  left: -9999px;
+  height: 0;
+  overflow: hidden;
+}
+
+/* ── One column: phones and narrow tablets, and short landscape screens ── */
+@media (max-width: 900px), (max-height: 520px) {
+  .at-hero-in {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 1.5rem;
+  }
+
+  .at-title {
+    font-size: min(5.5rem, 13.5cqi);
+  }
+
+  .at-end {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .at-end-col {
+    grid-column: 1;
+  }
+
+  .at-submit {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .at-input,
+  .at-textarea,
+  .at-choice {
+    transition: none;
+  }
+}

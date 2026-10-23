@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { Pause, Play, Volume2, VolumeX } from '@lucide/vue'
 import { usePanelSound } from '~/composables/usePanelSound'
 
 /**
@@ -40,20 +41,30 @@ import { usePanelSound } from '~/composables/usePanelSound'
  * highlighted while the reader was actually in the countdown.
  */
 const links = [
-  { id: 'about', href: '#about', label: 'About', sheet: '01' },
-  { id: 'categories', href: '#categories', label: 'Domains', sheet: '02' },
-  { id: 'countdown', href: '#countdown', label: 'When', sheet: '03' },
+  { id: 'top', href: '#top', label: 'The event', n: '00' },
+  { id: 'about', href: '#about', label: 'What is Maker Faire?', n: '01' },
+  { id: 'kochi', href: '#kochi', label: 'Why Kochi, why now', n: '02' },
+  { id: 'categories', href: '#categories', label: 'Where are the makers?', n: '03' },
+  { id: 'workshop', href: '#workshop', label: 'Woodwork & joinery', n: '04' },
+  { id: 'bench', href: '#bench', label: 'Electronics & IoT', n: '05' },
+  { id: 'noise', href: '#noise', label: 'Make some noise', n: '06' },
+  { id: 'take-part', href: '#take-part', label: 'Three ways in', n: '07' },
+  { id: 'countdown', href: '#countdown', label: 'When', n: '08' },
+  { id: 'beyond', href: '#beyond', label: '2027 and beyond', n: '09' },
 ]
 
-const activeId = ref<string>('')
-
-/** The hero is sheet 00, the general arrangement, before any link is reached. */
-const sheet = computed(() => {
-  const l = links.find(x => x.id === activeId.value)
-  return l ? { n: l.sheet, label: l.label } : { n: '00', label: 'General arrangement' }
-})
+const activeId = ref<string>('top')
+const activeIndex = computed(() => Math.max(0, links.findIndex(l => l.id === activeId.value)))
 
 const { enabled: soundOn, toggle: toggleSound } = usePanelSound()
+
+/**
+ * The page's one motion switch (WCAG 2.2.2): stops the 3D stage and every
+ * other decorative animation, and is remembered. Hidden only when the OS has
+ * already turned motion off, because then there is nothing for it to stop.
+ */
+const { view: motion, toggle: toggleMotion } = useMotion()
+const paused = computed(() => motion.value === 'paused')
 
 /**
  * Active-section tracking.
@@ -71,7 +82,7 @@ const { enabled: soundOn, toggle: toggleSound } = usePanelSound()
  */
 function recompute() {
   const line = window.innerHeight * 0.4
-  let current = ''
+  let current = 'top'
   for (const l of links) {
     const el = document.getElementById(l.id)
     if (el && el.getBoundingClientRect().top <= line) current = l.id
@@ -107,156 +118,310 @@ onUnmounted(() => {
 <template>
   <div class="rail-wrap">
     <nav id="primary-nav" class="rail" aria-label="Primary">
-      <p class="rail-sheet" aria-hidden="true">
-        <span>Sht {{ sheet.n }} / 04</span>
-        <span class="rail-sheet-label">{{ sheet.label }}</span>
-      </p>
-
-      <div class="rail-keys">
-        <a
-          v-for="l in links"
+      <!-- The route in miniature: the same stations as the page, in the same
+           order, the current one inked. Names show on hover and focus. -->
+      <ol class="rail-route">
+        <li
+          v-for="(l, i) in links"
           :key="l.id"
-          :href="l.href"
-          class="key rail-key"
-          :class="{ 'is-lit': activeId === l.id }"
-          :aria-current="activeId === l.id ? 'location' : undefined"
-        >{{ l.label }}</a>
+          class="rail-stop"
+          :class="{ 'is-past': i < activeIndex, 'is-lit': i === activeIndex }"
+        >
+          <a
+            :href="l.href"
+            class="rail-stn"
+            data-key-sound
+            :aria-current="i === activeIndex ? 'location' : undefined"
+          >
+            <span class="rail-n" aria-hidden="true">{{ l.n }}</span>
+            <span class="rail-name">{{ l.label }}</span>
+          </a>
+        </li>
+      </ol>
 
-        <a href="/interestform" class="key key-red rail-key rail-cta">Get Involved</a>
+      <a href="/interestform" class="key key-red rail-cta">Get Involved</a>
 
-        <button
-          type="button"
-          class="key rail-key rail-sound"
-          :class="{ 'is-on': soundOn }"
-          role="switch"
-          :aria-checked="soundOn"
-          aria-label="Key sounds"
-          @click="toggleSound"
-        >Sound {{ soundOn ? 'on' : 'off' }}</button>
-      </div>
+      <button
+        v-if="motion !== 'reduced'"
+        type="button"
+        class="rail-icon"
+        data-key-sound
+        :aria-pressed="paused"
+        aria-label="Pause motion"
+        :title="paused ? 'Play motion' : 'Pause motion'"
+        @click="toggleMotion"
+      >
+        <Play v-if="paused" :size="16" :stroke-width="1.75" aria-hidden="true" />
+        <Pause v-else :size="16" :stroke-width="1.75" aria-hidden="true" />
+      </button>
+
+      <button
+        type="button"
+        class="rail-icon"
+        data-key-sound
+        role="switch"
+        :aria-checked="soundOn"
+        aria-label="Sound"
+        :title="soundOn ? 'Sound on' : 'Sound off'"
+        @click="toggleSound"
+      >
+        <Volume2 v-if="soundOn" :size="16" :stroke-width="1.75" aria-hidden="true" />
+        <VolumeX v-else :size="16" :stroke-width="1.75" aria-hidden="true" />
+        <!-- Visible state where the strip has room; the switch's name stays "Sound". -->
+        <span class="rail-icon-text" aria-hidden="true">{{ soundOn ? 'Sound on' : 'Sound off' }}</span>
+      </button>
     </nav>
   </div>
 </template>
 
 <style scoped>
+/* A small floating strip in the drawing's own language: paper, one ink
+   hairline, a soft drop. It replaced a full-width 58px bar. */
 .rail-wrap {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 50%;
+  bottom: calc(12px + env(safe-area-inset-bottom));
   z-index: 120;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 16px);
 }
 
-/* Docked on the page grid: the sheet name over the narrow bay, the keys from
-   the column line. One hairline on top; the dividers are the keys' own. */
+/* Big screens: the rail is px-built, so it steps up with the page's rem
+   scale (main.css); --rail-h steps with it there. */
+@media (min-width: 2400px) {
+  .rail-wrap { zoom: 1.25; }
+}
+
+@media (min-width: 2880px) {
+  .rail-wrap { zoom: 1.5; }
+}
+
+@media (min-width: 3600px) {
+  .rail-wrap { zoom: 2; }
+}
+
 .rail {
-  display: grid;
-  grid-template-columns: var(--pn-grid);
-  /* border-box: the safe-area padding counts toward min-height, so it has to
-     be added here too or an iPhone home indicator crushes the keys. */
-  min-height: calc(var(--rail-h) + env(safe-area-inset-bottom));
-  padding-bottom: env(safe-area-inset-bottom);
-  background-color: var(--pn-enamel);
-  border-top: 2px solid var(--pn-ink);
-}
-
-.rail-sheet {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-  padding: 0 var(--pn-gutter);
-  font-family: var(--font-readout);
-  font-weight: 500;
-  font-size: 0.9375rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--pn-ink);
-  white-space: nowrap;
-  overflow: hidden;
+  gap: 0.5rem;
+  height: 44px;
+  padding: 0 0.375rem 0 0.75rem;
+  background-color: var(--pn-enamel);
+  border: 1px solid var(--pn-ink);
+  box-shadow: 0 1px 2px rgba(34, 34, 34, 0.06), 0 10px 28px rgba(34, 34, 34, 0.12);
 }
 
-.rail-sheet-label {
-  color: var(--pn-label);
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.rail-keys {
+/* ── The route ── */
+.rail-route {
   display: flex;
-  align-items: stretch;
-  border-left: 1px solid var(--pn-ink);
+  align-items: center;
+  margin: 0 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
 }
 
-.rail-key {
-  min-height: 0;
-  padding: 0.85rem 1.5rem 0.7rem;
-  border: 0;
-  border-right: 1px solid var(--pn-ink);
-  box-shadow: none;
-  font-size: 0.9375rem;
+.rail-stop {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* The hairline from the previous stop: inked once passed, dashed ahead. */
+.rail-stop + .rail-stop::before {
+  content: '';
+  width: 10px;
+  height: 0;
+  border-top: 1px dashed var(--pn-faint);
+}
+
+.rail-stop.is-past + .rail-stop::before {
+  border-top: 1px solid var(--pn-ink);
+}
+
+/* A 26x36 hit area around a 22px balloon (WCAG 2.5.8 asks 24px). */
+.rail-stn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 36px;
+  color: var(--pn-ink);
+  text-decoration: none;
+}
+
+.rail-n {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--field-blue);
+  border-radius: 50%;
+  background: var(--pn-enamel);
+  color: var(--field-blue);
+  font: 700 9.5px/1 var(--font-readout);
+  letter-spacing: 0;
+  transition: background-color 200ms var(--ease-out), color 200ms var(--ease-out);
+}
+
+.is-past .rail-n {
+  background: var(--field-blue);
+  color: var(--pn-enamel);
+}
+
+.is-lit .rail-n {
+  border-color: var(--field-blue);
+  background: var(--field-yellow);
+  color: var(--field-blue);
+  box-shadow: 0 0 0 2px var(--field-blue);
+}
+
+/* The station's name: a small boxed label above it on hover/focus. It stays
+   in the accessibility tree (opacity, not display) so it is the link's name. */
+.rail-name {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  padding: 3px 7px;
+  background: var(--pn-enamel);
+  border: 1px solid var(--pn-ink);
+  font: 500 11px/1.4 var(--font-readout);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  pointer-events: none;
+  transition: opacity 140ms var(--ease-out), transform 140ms var(--ease-out);
+}
+
+.rail-stn:hover .rail-name,
+.rail-stn:focus-visible .rail-name {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.rail-stn:hover .rail-n {
+  border-color: var(--pn-ink);
+}
+
+/* ── Keys ── */
+.rail-cta {
+  min-height: 32px;
+  padding: 0.45rem 0.85rem 0.35rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
   white-space: nowrap;
 }
 
-.rail-key:active,
-.rail-key.is-down {
-  transform: translateY(1px);
-  box-shadow: none;
+.rail-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--pn-ink);
+  cursor: pointer;
 }
 
-.rail-key::before {
-  top: 6px;
-  left: 1.5rem;
-  width: 1rem;
-  height: 2px;
+.rail-icon:hover {
+  border-color: var(--pn-ink);
 }
 
-.rail-cta {
-  margin-left: auto;
-  border-left: 1px solid var(--pn-ink);
+.rail-icon[aria-pressed='true'],
+.rail-icon[aria-checked='false'] {
+  color: var(--pn-label);
 }
 
-.rail-sound {
-  border-right: 0;
+/* The sound switch spells its state out, beside its icon, where the strip has room. */
+.rail-icon[role='switch'] {
+  display: inline-flex;
+  gap: 0.4rem;
+  width: auto;
+  min-width: 32px;
+  padding: 0 0.45rem;
 }
 
-.rail-sound.is-on::before {
-  background-color: var(--color-cyan);
+.rail-icon-text {
+  font: 600 11px/1 var(--font-readout);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 @media (max-width: 900px) {
-  .rail {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .rail-sheet {
+  .rail-icon-text {
     display: none;
   }
 
-  .rail-keys {
-    border-left: 0;
+  .rail-icon[role='switch'] {
+    width: 32px;
+    padding: 0;
+  }
+}
+
+/* A phone: the stations are the flexible part. They lose their connectors
+   and, on the narrowest screens, scroll sideways inside the strip, so the
+   Get Involved key and both toggles are always whole. */
+@media (max-width: 480px) {
+  .rail-wrap {
+    left: 8px;
+    right: 8px;
+    transform: none;
+    max-width: none;
   }
 
-  .rail-key {
-    flex: 1 1 0;
-    justify-content: center;
+  .rail {
+    gap: 0.25rem;
+    padding: 0 0.25rem 0 0.375rem;
+  }
+
+  .rail-route {
+    flex: 1 1 auto;
     min-width: 0;
-    padding: 0.85rem 0.25rem 0.7rem;
-    font-size: 0.8125rem;
-    letter-spacing: 0.02em;
-    white-space: normal;
-    text-align: center;
-    line-height: 1.15;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
 
-  .rail-key::before {
-    left: 50%;
-    transform: translateX(-50%);
+  .rail-route::-webkit-scrollbar {
+    display: none;
+  }
+
+  .rail-stop + .rail-stop::before {
+    display: none;
+  }
+
+  /* No hover tooltips on touch; the name stays as the link's accessible name. */
+  .rail-name {
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    border: 0;
+  }
+
+  .rail-stn {
+    width: 24px;
+  }
+
+  .rail-n {
+    width: 20px;
+    height: 20px;
+    font-size: 9px;
   }
 
   .rail-cta {
-    flex-grow: 1.5;
-    margin-left: 0;
-    border-left: 0;
+    padding: 0.45rem 0.55rem 0.35rem;
+    font-size: 0.6875rem;
+    letter-spacing: 0.03em;
+  }
+
+  .rail-icon,
+  .rail-icon[role='switch'] {
+    width: 28px;
+    min-width: 0;
   }
 }
 </style>

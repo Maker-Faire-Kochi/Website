@@ -44,7 +44,6 @@ function go(path: string) {
 
       <div class="err-grid">
         <div class="err-copy-col">
-          <p class="err-kicker">Drawing control</p>
           <h1 class="err-title">
             <template v-if="missing">
               Sheet <span class="err-accent">missing</span>
@@ -69,6 +68,9 @@ function go(path: string) {
             team.
           </p>
 
+          <!-- The story: the route breaks here; the robot stops at the gap. -->
+          <RouteBot v-if="missing" class="err-routebot" />
+
           <div class="err-actions">
             <button type="button" class="key key-red" @click="go('/')">
               Back to the drawing
@@ -90,10 +92,10 @@ function go(path: string) {
               <title>Missing figure</title>
               <defs>
                 <pattern id="err-dots" width="16" height="16" patternUnits="userSpaceOnUse">
-                  <circle cx="1" cy="1" r="1" fill="rgba(10,10,10,0.14)" />
+                  <circle cx="1" cy="1" r="1" fill="rgba(34,34,34,0.14)" />
                 </pattern>
               </defs>
-              <rect width="360" height="300" fill="#FFFFFF" />
+              <rect width="360" height="300" fill="#F6F6F3" />
               <rect width="360" height="300" fill="url(#err-dots)" />
 
               <!-- Registration ticks -->
@@ -119,7 +121,7 @@ function go(path: string) {
               <!-- Ghost bench machine -->
               <g
                 fill="none"
-                stroke="#0A0A0A"
+                stroke="#222222"
                 stroke-width="2"
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -139,10 +141,9 @@ function go(path: string) {
                 y="178"
                 text-anchor="middle"
                 fill="#ED1C24"
-                font-family="Archivo, Arial Narrow, sans-serif"
+                font-family="Anton, Arial Narrow, sans-serif"
                 font-size="64"
-                font-weight="700"
-                font-stretch="62%"
+                font-weight="400"
               >{{ code }}</text>
 
               <!-- Balloon callout -->
@@ -155,7 +156,7 @@ function go(path: string) {
                   fill="#FFFFFF"
                   font-family="IBM Plex Mono, monospace"
                   font-size="12"
-                  font-weight="600"
+                  font-weight="500"
                 >—</text>
               </g>
 
@@ -163,7 +164,7 @@ function go(path: string) {
                 x="180"
                 y="268"
                 text-anchor="middle"
-                fill="#0077A8"
+                fill="#006E9B"
                 font-family="IBM Plex Mono, monospace"
                 font-size="11"
                 font-weight="500"
@@ -183,7 +184,7 @@ function go(path: string) {
             </div>
             <div>
               <dt>Event</dt>
-              <dd>26–27 Jan</dd>
+              <dd>5–6 Feb</dd>
             </div>
           </dl>
         </aside>
@@ -211,7 +212,7 @@ function go(path: string) {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: stretch;
-  background: #fff;
+  background: var(--pn-enamel);
   border-bottom: 2px solid var(--pn-ink);
   font-family: var(--font-readout);
 }
@@ -222,7 +223,7 @@ function go(path: string) {
   gap: 0.6rem;
   padding: 0.6rem 1.5rem;
   border-right: 1px solid var(--pn-ink);
-  font-weight: 600;
+  font-weight: 500;
   font-size: 0.8rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -254,7 +255,7 @@ function go(path: string) {
   padding: 0 1.1rem;
   border-left: 1px solid var(--pn-ink);
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   text-decoration: none;
@@ -266,7 +267,7 @@ function go(path: string) {
 }
 
 .err-link:focus-visible {
-  outline: 2px solid var(--color-cyan);
+  outline: 2px solid var(--focus-ring);
   outline-offset: -2px;
 }
 
@@ -311,7 +312,7 @@ function go(path: string) {
 }
 
 .err-rule span:nth-child(2) {
-  color: #0077A8;
+  color: var(--color-cyan-text);
   text-align: center;
 }
 
@@ -327,23 +328,12 @@ function go(path: string) {
   align-items: center;
 }
 
-.err-kicker {
-  margin: 0 0 0.75rem;
-  font-family: var(--font-readout);
-  font-size: 0.875rem;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--pn-label);
-}
-
 .err-title {
   margin: 0;
   font-family: var(--font-panel);
-  font-stretch: 62%;
   font-size: clamp(3rem, 8vw, 4.75rem);
-  font-weight: 900;
-  line-height: 0.88;
+  font-weight: 400;
+  line-height: var(--lh-display);
   text-transform: uppercase;
   color: var(--pn-ink);
 }
@@ -361,11 +351,14 @@ function go(path: string) {
   color: var(--pn-ink);
 }
 
+.err-routebot {
+  max-width: 34rem;
+  margin: 1.75rem 0 0;
+}
+
 .err-note {
   margin: 1rem 0 0;
   max-width: 38ch;
-  padding-left: 0.75rem;
-  border-left: 3px solid var(--color-cyan);
   font-family: var(--font-readout);
   font-size: 1rem;
   line-height: 1.5;
@@ -380,9 +373,9 @@ function go(path: string) {
 }
 
 .err-card {
-  background: #fff;
+  background: var(--pn-enamel);
   border: 1px solid var(--pn-ink);
-  box-shadow: 4px 4px 0 rgba(10, 10, 10, 0.1);
+  box-shadow: 0 1px 2px rgba(34, 34, 34, 0.06), 0 12px 32px rgba(34, 34, 34, 0.08);
   overflow: hidden;
 }
 
@@ -432,13 +425,13 @@ function go(path: string) {
   font-size: 0.6875rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #0077A8;
+  color: var(--color-cyan-text);
 }
 
 .err-spec dd {
   margin: 0.3rem 0 0;
   font-family: var(--font-readout);
-  font-weight: 600;
+  font-weight: 500;
   font-size: 0.875rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;

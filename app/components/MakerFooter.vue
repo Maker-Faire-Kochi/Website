@@ -3,22 +3,25 @@ import { Mail } from '@lucide/vue'
 import { CONTACT_EMAIL, INSTAGRAM_URL } from '~/composables/useCountdown'
 
 /**
- * The newsletter form was REMOVED at the owner's request. It is worth knowing
- * what it actually did: `handleSubscribe` set a flag, cleared the field, showed
- * "You're on the list", and reset after five seconds. It never sent anything
- * anywhere -- there was no endpoint and no storage, so every address typed into
- * it was silently discarded. Removing it is the honest outcome; wiring it to a
- * real provider would have been the other one.
+ * The close of the poster: an ink field with the mark, the two real contact
+ * routes, the story's sections and the people building it.
  *
- * If a form ever returns here, RESTORE THE NAV RAIL'S KEYBOARD AVOIDANCE with
- * it (see MakerHeader.vue) -- that logic existed solely because this input sat
- * under a fixed bottom rail on phones.
+ * The newsletter form was REMOVED at the owner's request. It never sent
+ * anything anywhere -- there was no endpoint and no storage -- so removing it
+ * was the honest outcome. If a form ever returns here, RESTORE THE NAV RAIL'S
+ * KEYBOARD AVOIDANCE with it (see MakerHeader.vue).
  */
-const sheets = [
-  { n: '00', label: 'General arrangement', href: '#top' },
-  { n: '01', label: 'About', href: '#about' },
-  { n: '02', label: 'Domains', href: '#categories' },
-  { n: '03', label: 'When', href: '#countdown' },
+const sections = [
+  { label: 'The event', href: '#top' },
+  { label: 'What is Maker Faire?', href: '#about' },
+  { label: 'Why Kochi, why now', href: '#kochi' },
+  { label: 'Where are the makers?', href: '#categories' },
+  { label: 'Woodwork & joinery', href: '#workshop' },
+  { label: 'Electronics & IoT', href: '#bench' },
+  { label: 'Make some noise', href: '#noise' },
+  { label: 'Three ways in', href: '#take-part' },
+  { label: 'When', href: '#countdown' },
+  { label: '2027 and beyond', href: '#beyond' },
 ]
 
 const builders = [
@@ -29,16 +32,12 @@ const builders = [
 </script>
 
 <template>
-  <footer class="maker-footer enamel">
-    <SheetHead n="04" label="Colophon" />
-    <div class="footer-container">
+  <footer class="maker-footer field field-ink">
+    <div class="wrap footer-container">
       <div class="footer-top">
-        <div class="footer-brand-column">
-          <!-- The real lockup, not a Bungee approximation of it. This was
-               typeset as "Make:" + "Maker Faire" + "Kochi" with a red colon and
-               cyan city, which is a redrawing of a licensed trademark in the
-               wrong typeface -- and it drifts from the official mark every time
-               anyone touches the CSS. Same <picture> pattern as the hero. -->
+        <div class="footer-brand">
+          <!-- The real lockup, never typeset: it carries its own white plaque
+               and cyan frame, so it needs no colour handling on ink. -->
           <picture>
             <source srcset="/img/logo/mf-kochi-long@2x.webp 2x, /img/logo/mf-kochi-long.webp 1x" type="image/webp" />
             <img
@@ -54,20 +53,14 @@ const builders = [
           <p class="brand-desc">
             Kerala’s first licensed Maker Faire, celebrating invention, creativity and hands-on learning.
           </p>
-          <!-- Was the literal text "X" / "IG" / "YT" in three boxes, pointing at
-               twitter.com/makerfaire, instagram.com/makerfaire and
-               youtube.com/makerfaire -- the GLOBAL Make Community accounts, not
-               this faire's. Two real destinations now.
-
-               The Instagram glyph is an inline SVG because @lucide/vue ships no
-               brand icons (Instagram, Twitter and Youtube are simply not
-               exported). Mail is a Lucide icon, so the two match in weight. -->
+          <!-- @lucide/vue ships no brand icons, so Instagram is an inline SVG
+               drawn at Lucide's weight; Mail is Lucide. -->
           <div class="social-links">
             <a :href="INSTAGRAM_URL" target="_blank" rel="noopener noreferrer" class="social-link">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
+                width="18"
+                height="18"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -83,37 +76,29 @@ const builders = [
               Instagram
             </a>
             <a :href="`mailto:${CONTACT_EMAIL}`" class="social-link">
-              <Mail :size="16" :stroke-width="2" aria-hidden="true" />
+              <Mail :size="18" :stroke-width="2" aria-hidden="true" />
               Email
             </a>
           </div>
         </div>
 
-        <nav class="footer-links-column" aria-labelledby="sheet-index">
-          <h4 id="sheet-index" class="column-title">Sheet index</h4>
-          <ol class="link-list">
-            <li v-for="s in sheets" :key="s.n">
-              <a :href="s.href" class="footer-link"><span class="sheet-n" aria-hidden="true">{{ s.n }}</span>{{ s.label }}</a>
+        <nav class="footer-col" aria-labelledby="footer-sections">
+          <h2 id="footer-sections" class="label col-title">On this page</h2>
+          <ul class="link-list">
+            <li v-for="s in sections" :key="s.href">
+              <a :href="s.href" class="footer-link">{{ s.label }}</a>
             </li>
-          </ol>
+          </ul>
         </nav>
 
-        <!-- Replaces the newsletter column. With the proposal CTAs removed there
-             was otherwise NO way to contact the faire anywhere on the site. -->
-        <div class="footer-contact-column">
-          <h4 class="column-title">Contact</h4>
+        <div class="footer-col">
+          <h2 class="label col-title">Contact</h2>
           <a :href="`mailto:${CONTACT_EMAIL}`" class="contact-email">{{ CONTACT_EMAIL }}</a>
 
-          <dl class="colophon">
-            <div>
-              <dt>Collectively building</dt>
-              <dd>
-                <ul class="builder-list">
-                  <li v-for="name in builders" :key="name">{{ name }}</li>
-                </ul>
-              </dd>
-            </div>
-          </dl>
+          <h2 class="label col-title builders-title">Collectively building</h2>
+          <ul class="builder-list">
+            <li v-for="name in builders" :key="name">{{ name }}</li>
+          </ul>
         </div>
       </div>
 
@@ -128,71 +113,37 @@ const builders = [
 </template>
 
 <style scoped>
-/* The sheet's title block: ruled cells on the page's own column line. */
-.maker-footer,
-.maker-footer p {
+.maker-footer {
+  /* Ends clear of the floating nav. */
+  padding-bottom: calc(var(--rail-h) + 2.5rem + env(safe-area-inset-bottom));
   font-family: var(--font-readout);
 }
 
-.maker-footer {
+.footer-top {
   display: grid;
-  grid-template-columns: var(--pn-grid);
-  /* Ends exactly on the pinned strip, which closes the last row. */
-  padding-bottom: calc(var(--rail-h) + env(safe-area-inset-bottom));
-  color: var(--pn-ink);
-}
-
-.maker-footer :deep(.sheet-head) {
-  margin-bottom: 0;
-}
-
-.footer-container {
-  grid-column: 1 / -1;
-}
-
-.footer-top,
-.footer-bottom {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
-}
-
-/* Same rule as every table above: the wide bay's first cell starts ON the
-   column line, and only the cells after it are ruled off. */
-.footer-top > *,
-.footer-bottom > * {
-  padding: 2.5rem var(--pn-gutter) 2.5rem 0;
-}
-
-.footer-top > .footer-brand-column,
-.footer-bottom > .credits {
-  padding-left: var(--pn-gutter);
-}
-
-
-
-.footer-bottom {
-  border-top: 1px solid var(--pn-ink);
+  grid-template-columns: minmax(0, 5fr) minmax(0, 3.5fr) minmax(0, 3.5fr);
+  gap: 2.5rem clamp(2rem, 5vw, 5rem);
 }
 
 .footer-logo {
   display: block;
-  width: 200px;
-  max-width: 100%;
+  width: 216px;
   height: auto;
-  margin-bottom: 1.5rem;
 }
 
 .brand-desc {
-  max-width: 32ch;
-  font-size: 1.125rem;
-  line-height: 1.55;
-  color: var(--pn-label);
-  margin-bottom: 1.5rem;
+  margin: 1.25rem 0 0;
+  max-width: 34ch;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--on-blue-label);
 }
 
 .social-links {
   display: flex;
-  gap: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin-top: 1.5rem;
 }
 
 .social-link,
@@ -202,149 +153,75 @@ const builders = [
   align-items: center;
   gap: 0.5rem;
   min-height: 44px;
-  color: var(--pn-ink);
+  font-weight: 600;
+  color: var(--on-blue);
   text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.3em;
-  transition: text-decoration-color var(--dur-fast) linear;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.25em;
 }
 
-.social-link {
-  font-family: var(--font-readout);
-  font-weight: 500;
-  font-size: 1.125rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+.social-link:hover,
+.footer-link:hover,
+.contact-email:hover {
+  color: var(--field-yellow);
 }
 
-.column-title {
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.6rem;
-  border-bottom: 1px solid var(--pn-ink);
-  font-family: var(--font-readout);
-  font-weight: 500;
-  font-size: 0.875rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--pn-label);
+.col-title {
+  margin: 0 0 0.5rem;
+  color: var(--field-yellow);
 }
 
-.link-list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-}
-
-.link-list {
-  margin-top: -0.75rem;
-}
-
-.link-list li {
-  border-bottom: 1px solid var(--pn-ink);
-}
-
-.footer-link {
-  display: flex;
-  gap: 1rem;
-  font-size: 1.125rem;
-  text-decoration-color: transparent;
-}
-
-.sheet-n {
-  width: 1.6rem;
-  color: var(--pn-label);
-  font-variant-numeric: tabular-nums;
-}
-
-.colophon {
-  display: grid;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.colophon dt {
-  font-weight: 500;
-  font-size: 0.875rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--pn-label);
-}
-
-.colophon dd {
-  margin: 0.3rem 0 0;
-  font-size: 1.125rem;
-  color: var(--pn-ink);
-}
-
+.link-list,
 .builder-list {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.builder-list li + li {
-  margin-top: 0.35rem;
+.footer-link {
+  min-height: 36px;
+  font-weight: 500;
+  text-decoration: none;
 }
 
 .footer-link:hover {
-  text-decoration-color: currentColor;
+  text-decoration: underline;
 }
 
 .contact-email {
-  font-family: var(--font-readout);
-  font-size: 1rem;
-  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.builders-title {
+  margin-top: 1.75rem;
+}
+
+.builder-list li {
+  padding: 0.25rem 0;
+  font-weight: 500;
+  color: var(--on-blue);
 }
 
 .footer-bottom {
-  font-size: 1.125rem;
-  color: var(--pn-label);
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 1rem clamp(2rem, 5vw, 5rem);
+  margin-top: clamp(3rem, 6vw, 5rem);
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--on-blue-label);
 }
 
-.legal-text,
-.credits {
-  font-size: 1rem;
-  line-height: 1.55;
-  color: var(--pn-label);
-}
-
-.legal-text {
-  grid-column: 2 / -1;
-  grid-row: 1;
-  max-width: 80ch;
-}
-
-.credits {
-  grid-column: 1;
-  grid-row: 1;
+.footer-bottom p {
+  margin: 0;
 }
 
 @media (max-width: 900px) {
-  .maker-footer {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .footer-top,
   .footer-bottom {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .footer-top > *,
-  .footer-bottom > *,
-  .footer-top > .footer-brand-column,
-  .footer-bottom > .credits {
-    padding: 2rem 1.25rem;
-  }
-
-  .footer-top > * + *,
-  .footer-bottom > .credits {
-    border-top: 1px solid var(--pn-ink);
-  }
-
-  .legal-text,
-  .credits {
-    grid-column: 1;
-    grid-row: auto;
   }
 }
 </style>

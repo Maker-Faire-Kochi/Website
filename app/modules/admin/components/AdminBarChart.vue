@@ -53,9 +53,9 @@ onMounted(() => requestAnimationFrame(() => { drawn.value = true }))
 }
 .bar-i { color: var(--pn-label); }
 .bar-label { line-height: 1.35; overflow-wrap: anywhere; }
-.bar-count { font-weight: 600; font-variant-numeric: tabular-nums; }
+.bar-count { font-weight: 500; font-variant-numeric: tabular-nums; }
 .pct { font-weight: 400; color: var(--pn-label); }
-.track { grid-column: 2 / -1; height: 6px; background: rgba(10, 10, 10, 0.06); }
+.track { grid-column: 2 / -1; height: 6px; background: rgba(34, 34, 34, 0.06); }
 .fill { display: block; height: 100%; transition: width 700ms var(--ease-out); }
 .fill-cyan { background: var(--color-cyan); }
 .fill-red { background: var(--color-red-cta); }

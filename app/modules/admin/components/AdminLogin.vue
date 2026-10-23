@@ -79,7 +79,6 @@ async function forceLock() {
       <Lock :size="14" :stroke-width="2.5" aria-hidden="true" />
       Locked
     </div>
-    <p class="sheet">Sht A1 &middot; Access</p>
     <h1>Admin sign in</h1>
     <p class="sub">
       This dashboard belongs to one Supabase Auth account.
@@ -127,9 +126,9 @@ async function forceLock() {
   max-width: 26rem;
   margin: 4rem auto;
   padding: 2rem 1.75rem 1.5rem;
-  background: #fff;
+  background: var(--pn-enamel);
   border: 1px solid var(--pn-ink);
-  box-shadow: 4px 4px 0 rgba(10, 10, 10, 0.1);
+  box-shadow: 0 1px 2px rgba(34, 34, 34, 0.06), 0 10px 28px rgba(34, 34, 34, 0.08);
   font-family: var(--font-readout);
 }
 .login-card::before {
@@ -146,26 +145,18 @@ async function forceLock() {
   padding: 0.25rem 0.55rem;
   margin-bottom: 1rem;
   font-size: 0.66rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #fff;
   background: var(--pn-ink);
 }
-.sheet {
-  margin: 0 0 0.4rem;
-  font-size: 0.66rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--pn-label);
-}
 h1 {
   margin: 0 0 0.6rem;
   font-family: var(--font-panel);
-  font-stretch: 62%;
-  font-weight: 900;
+  font-weight: 400;
   font-size: 2.4rem;
-  line-height: 0.9;
+  line-height: var(--lh-display);
   text-transform: uppercase;
   color: var(--pn-ink);
 }
@@ -203,9 +194,9 @@ h1 {
   border-radius: 0;
   font: inherit;
   font-size: 1rem;
-  background: #fff;
+  background: var(--pn-enamel);
 }
-.inp:focus-visible { outline: 2px solid var(--color-cyan); outline-offset: 2px; }
+.inp:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .btn { width: 100%; margin-top: 0.25rem; }
 .btn:disabled { opacity: 0.65; cursor: wait; }
 .msg { margin: 1rem 0 0; font-size: 0.8rem; color: var(--pn-label); }

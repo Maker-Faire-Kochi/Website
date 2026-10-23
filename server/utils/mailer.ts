@@ -106,19 +106,19 @@ export function volunteerReceivedMail(name: string) {
   <meta name="color-scheme" content="light" />
   <title>${escapeHtml(subject)}</title>
 </head>
-<body style="margin:0;padding:0;background:#F7F7F7;background-image:radial-gradient(#D8D8D8 1px,transparent 1px);background-size:16px 16px;-webkit-text-size-adjust:100%;">
+<body style="margin:0;padding:0;background:#F6F6F3;background-image:radial-gradient(#CFCFCA 1px,transparent 1px);background-size:16px 16px;-webkit-text-size-adjust:100%;">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
     Your application has been received and is under review.
   </div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:40px 16px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#FFFFFF;border:1px solid #0A0A0A;box-shadow:3px 3px 0 rgba(10,10,10,0.08);">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#FBFBF9;border:1px solid #222222;box-shadow:3px 3px 0 rgba(34,34,34,0.08);">
           <tr>
             <td style="height:4px;line-height:4px;font-size:0;background:#00AEEF;">&nbsp;</td>
           </tr>
           <tr>
-            <td style="padding:24px 28px 20px;border-bottom:1px solid #0A0A0A;">
+            <td style="padding:24px 28px 20px;border-bottom:1px solid #222222;">
               <a href="${SITE_URL}" style="text-decoration:none;display:inline-block;">
                 <img
                   src="${LOGO_URL}"
@@ -131,7 +131,7 @@ export function volunteerReceivedMail(name: string) {
             </td>
           </tr>
           <tr>
-            <td style="padding:28px 28px 8px;font-family:'IBM Plex Mono',Menlo,Consolas,'Courier New',monospace;font-size:15px;line-height:1.65;color:#0A0A0A;">
+            <td style="padding:28px 28px 8px;font-family:'IBM Plex Mono',Menlo,Consolas,'Courier New',monospace;font-size:15px;line-height:1.65;color:#222222;">
               <p style="margin:0 0 16px;">Dear ${escapeHtml(first)},</p>
               <p style="margin:0 0 16px;">
                 Thank you for your interest in joining the
@@ -144,13 +144,13 @@ export function volunteerReceivedMail(name: string) {
           </tr>
           <tr>
             <td style="padding:0 28px 8px;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #0A0A0A;background:#FFFFFF;box-shadow:2px 2px 0 rgba(10,10,10,0.06);">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #222222;background:#FBFBF9;box-shadow:2px 2px 0 rgba(34,34,34,0.06);">
                 <tr>
                   <td style="padding:14px 16px;font-family:'IBM Plex Mono',Menlo,Consolas,'Courier New',monospace;">
                     <p style="margin:0 0 6px;font-size:11px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:#5A6169;">
                       Application Status
                     </p>
-                    <p style="margin:0;font-size:15px;line-height:1.4;color:#0A0A0A;font-weight:700;">
+                    <p style="margin:0;font-size:15px;line-height:1.4;color:#222222;font-weight:700;">
                       Received &mdash; Under Review
                     </p>
                   </td>
@@ -159,7 +159,7 @@ export function volunteerReceivedMail(name: string) {
             </td>
           </tr>
           <tr>
-            <td style="padding:20px 28px 28px;font-family:'IBM Plex Mono',Menlo,Consolas,'Courier New',monospace;font-size:15px;line-height:1.65;color:#0A0A0A;">
+            <td style="padding:20px 28px 28px;font-family:'IBM Plex Mono',Menlo,Consolas,'Courier New',monospace;font-size:15px;line-height:1.65;color:#222222;">
               <p style="margin:0 0 16px;">
                 Our team will go through the responses and reach out to you via email
                 or WhatsApp with the next steps.
@@ -175,9 +175,9 @@ export function volunteerReceivedMail(name: string) {
             </td>
           </tr>
           <tr>
-            <td style="padding:14px 28px;border-top:1px solid #0A0A0A;background:#0A0A0A;font-family:'IBM Plex Mono',Menlo,Consolas,'Courier New',monospace;font-size:11px;line-height:1.55;letter-spacing:0.04em;color:#A8AEB5;">
+            <td style="padding:14px 28px;border-top:1px solid #222222;background:#222222;font-family:'IBM Plex Mono',Menlo,Consolas,'Courier New',monospace;font-size:11px;line-height:1.55;letter-spacing:0.04em;color:#A8AEB5;">
               Kerala&rsquo;s first licensed Maker Faire<br />
-              26&ndash;27 January 2027 &middot; Kochi
+              5&ndash;6 February 2027 &middot; Kochi
             </td>
           </tr>
         </table>

@@ -43,8 +43,10 @@ watch(() => props.to, (v) => {
   value.value = v
 })
 
+const { state: motion } = useMotion()
+
 onMounted(() => {
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches || typeof IntersectionObserver === 'undefined') return
+  if (motion.value !== 'running' || typeof IntersectionObserver === 'undefined') return
   io = new IntersectionObserver(([e]) => {
     if (e?.isIntersecting) {
       value.value = props.from

@@ -5,13 +5,13 @@
   --color-red-cta:       #C4121A;
   --color-red-on-dark:   #FF5A5F;
   --color-cyan:          #00AEEF;
-  --color-ink:           #292929;
+  --color-ink:           #222222;
   --color-charcoal:      #1F1F1F;
-  --color-surface:       #F3F3F3;
+  --color-surface:       #ECECE7;
   --color-white:         #FFFFFF;
   --color-muted:         #5A6169;
   --color-muted-on-dark: #A8AEB5;
-  --color-hairline:      #E3E3E3;
+  --color-hairline:      #DCDCD5;
 
   --color-dark:     var(--color-ink);
   --color-light:    var(--color-white);
@@ -29,9 +29,9 @@
      There is deliberately no dark-appearance layer: this site has one
      appearance, and inventing a second set of tokens for a mode nobody ships
      would mean nine more contrast pairs nobody has measured. */
-  --bg-base:      var(--color-white);
-  --bg-grouped:   #F7F7F7;
-  --surface-1:    var(--color-white);
+  --bg-base:      var(--pn-enamel);
+  --bg-grouped:   #EFEFEA;
+  --surface-1:    var(--pn-enamel);
   --surface-2:    var(--color-surface);
   --separator:    var(--color-hairline);
   --label:        var(--color-ink);
@@ -42,9 +42,9 @@
   --label-secondary-on-dark: var(--color-muted-on-dark);
   --separator-on-dark: rgba(255, 255, 255, 0.12);
   
-  --font-headline: 'Bungee', sans-serif;
-  --font-body: 'Outfit', sans-serif;
-  --font-mono: 'Space Grotesk', sans-serif;
+  --font-headline: var(--font-panel);
+  --font-body: var(--font-readout);
+  --font-mono: var(--font-readout);
   
 
   /* ── SPACING SCALE ────────────────────────────────────────────────────────
@@ -91,7 +91,7 @@
   /* The rail's footprint, and every clearance is built on it (root scroll
      padding, hero bottom padding, footer bottom padding). Keys grew with the
      reading size: about 55px of label plus a 2px top rule. */
-  --rail-h: 58px;
+  --rail-h: 56px;
 
   /* ── HERO SCENE DARKNESS — tune it here, nowhere else ─────────────────────
      0 = untouched scene, 1 = black. The hero scrim is built from this single
@@ -140,33 +140,32 @@
   --dur-mid: 280ms;
 
   /* ── CONTROL PANEL (homepage) ─────────────────────────────────────────────
-     Favicon colours only -- white, black, --color-red, --color-cyan -- plus
-     black tints. Measured pairs:
-
-       --pn-ink        on white          19.8
-       --pn-label      on white           7.46   secondary text
-       --pn-faint      on white           3.36   decorative display only (>=24px)
-       white           on --pn-deep      19.8
-       --pn-label-deep on --pn-deep       7.85   secondary text on black
-       --color-cyan    on --pn-plate      7.83   readout digits
-       white           on --color-red-cta 6.09
-
-     Cyan is never text on white (2.53:1). */
-  --pn-enamel:      #FFFFFF;
-  --pn-enamel-hi:   #FFFFFF;
-  --pn-ink:         #0A0A0A;
+     Paper, ink, --color-red and --color-cyan, with a beam illustration accent.
+     Measured pairs: re-measured by scripts/contrast-audit.ts (see CLAUDE.md).
+     --pn-faint is decorative display only (>=24px).
+     Cyan is never text on paper. */
+  --pn-enamel:      #F6F6F3;
+  --pn-enamel-hi:   #F6F6F3;
+  --pn-ink:         #222222;
   --pn-label:       #555555;
   --pn-faint:       #8C8C8C;
-  --pn-deep:        #0A0A0A;
+  --pn-deep:        #181818;
   --pn-deep-hi:     #1C1C1C;
   --pn-on-deep:     #FFFFFF;
   --pn-label-deep:  #A3A3A3;
-  --pn-plate:       #0A0A0A;
+  --pn-plate:       #181818;
   --pn-phosphor:    var(--color-cyan);
   --pn-phosphor-dim:#A3A3A3;
   --pn-glow:        0, 174, 239;
   --pn-seam-dark:   rgba(0, 0, 0, 0.12);
   --pn-seam-light:  rgba(255, 255, 255, 0);
+  /* Illustration accent from the guidelines beam palette. */
+  --beam-accent: #225DAC;
+  /* Cyan as TEXT or a focus ring on light grounds. --color-cyan is 2.34:1 on
+     paper, so it stays structural; this darker cyan passes 4.5:1 on paper and
+     on every light tint (scripts/contrast-audit.ts). */
+  --color-cyan-text: #006E9B;
+  --focus-ring: var(--color-cyan-text);
 
   /* One grid for the whole homepage: a narrow bay and a wide bay, 1 : 2.
      Every section, dark block and footer column snaps to these two lines. */
@@ -182,28 +181,43 @@
   /* The one lead size: every standfirst on every sheet. */
   --pn-lead: clamp(1.375rem, 2.2vw, 2.125rem);
 
-  --font-panel: 'Archivo', 'Arial Narrow', sans-serif;
-  --font-readout: 'IBM Plex Mono', ui-monospace, monospace;
+  /* Headlines: the Make Some Noise campaign's broad display face. One weight. */
+  --font-panel: 'Dela Gothic One', 'Arial Black', sans-serif;
+  /* Anton's caps are tall and its accents sit high: below ~1 stacked lines
+     collide. Every multi-line display setting uses this, never a raw value. */
+  --lh-display: 1.08;
+  /* Everything that is read: the campaign's text face. */
+  --font-readout: 'Inter', system-ui, sans-serif;
+
+  /* Campaign fields: whole sections in these, never spots of them.
+     Measured in scripts/contrast-audit.ts. */
+  --field-yellow: #FFE86C;
+  --field-blue: #2B19D9;
+  /* Text on blue: white for reading, yellow for display. */
+  --on-blue: #FFFFFF;
+  --on-blue-display: var(--field-yellow);
+  /* Secondary text on blue (measured >= 4.5:1). */
+  --on-blue-label: #D8D4FF;
+  --font-malayalam: 'Noto Sans Malayalam', sans-serif;
 
   /* Drafting paper: a 24px pitch. The gutter is two pitches, so at the design
    width both column lines land on a dot. */
-  --pn-grain: radial-gradient(circle at 12px 12px, rgba(10, 10, 10, 0.13) 1px, transparent 1.5px);
+  --pn-grain: radial-gradient(circle at 12px 12px, rgba(34, 34, 34, 0.13) 1px, transparent 1.5px);
   --pn-grain-deep: radial-gradient(circle at 12px 12px, rgba(255, 255, 255, 0.07) 1.1px, transparent 1.6px);
 }
 
 /* ── Panel primitives ───────────────────────────────────────────────────── */
 
-/* ONE sheet of paper under the whole homepage, so the grid runs unbroken
-   from section to section instead of restarting at every box. */
+/* ONE sheet of paper under the whole site, painted on <html> so the grid runs
+   unbroken from section to section -- and so the 3D stage's fixed canvas
+   (z-index -1, see app/three/core/stage.ts) shows through every element that
+   has no background of its own. Do not move the paper back onto .maker-app:
+   an opaque wrapper paints over the canvas and every scene disappears. */
 .maker-app {
-  background-color: var(--pn-enamel);
-  background-image: var(--pn-grain);
-  background-size: 24px 24px;
-  background-position: -12px -12px;
   font-family: var(--font-readout);
 }
 
-/* Two families on the homepage: condensed Archivo for display, Plex Mono for
+/* Two families on the homepage: Anton for display, Plex Mono for
    everything else. This outranks the global `p` rule, not scoped ones. */
 .maker-app p {
   font-family: var(--font-readout);
@@ -289,91 +303,99 @@
   box-shadow: none;
 }
 
-/* ── The key ───────────────────────────────────────────────────────────────
-   Every control on the homepage is this one component, in two colours: red
-   (the action) and white (everything else). The travel is real but small:
-   the cap sits on a 2px edge in its own darker shade and drops onto it when
-   pressed; the slit on its face lights cyan. Square, like the panel. */
+/* ── Keys and chips ────────────────────────────────────────────────────────
+   The campaign's controls: flat, bold Inter caps, a 2px border in the
+   field's own colour (currentColor), so one key reads on paper, yellow and
+   blue alike. Red fill is reserved for the one action (Get Involved). Chips
+   are the smaller, rounded controls under each live drawing. */
 .key {
-  --cap: #FFFFFF;
-  --cap-edge: var(--pn-ink);
-  --cap-ink: var(--pn-ink);
-  --slit: transparent;
   position: relative;
   display: inline-flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 0.75rem;
+  justify-content: center;
+  gap: 0.6rem;
   min-height: 48px;
-  padding: 1rem 1.25rem 0.85rem;
+  padding: 0.85rem 1.4rem;
   font-family: var(--font-readout);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.875rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  text-decoration: none;
   line-height: 1;
-  color: var(--cap-ink);
-  background-color: var(--cap);
-  border: 1.5px solid var(--cap-edge);
+  color: inherit;
+  background-color: transparent;
+  border: 2px solid currentColor;
   border-radius: 0;
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  box-shadow: 0 2px 0 var(--cap-edge);
-  transition:
-    transform 60ms var(--ease-out),
-    box-shadow 60ms var(--ease-out),
-    background-color 120ms linear;
+  transition: transform 80ms var(--ease-out), box-shadow 120ms var(--ease-out), background-color 120ms linear;
 }
 
-/* The slit across the top of the cap. */
-.key::before {
-  content: '';
-  position: absolute;
-  top: 5px;
-  left: 1.25rem;
-  width: 1.25rem;
-  height: 2px;
-  background-color: var(--slit);
-  transition: background-color 90ms linear;
-}
-
-.key:hover::before,
-.key:focus-visible::before,
-.key:active::before,
-.key.is-lit::before {
-  background-color: var(--color-cyan);
+.key:hover {
+  box-shadow: inset 0 -4px 0 currentColor;
 }
 
 .key:active,
 .key.is-down {
-  transform: translateY(2px);
-  box-shadow: 0 0 0 var(--cap-edge);
+  transform: translateY(1px);
 }
 
 .key-red {
-  --cap: var(--color-red-cta);
-  --cap-edge: #7A0A0F;
-  --cap-ink: var(--color-white);
+  color: var(--color-white);
+  background-color: var(--color-red-cta);
+  border-color: var(--color-red-cta);
 }
 
-.key-red:hover::before,
-.key-red:focus-visible::before,
-.key-red:active::before,
-.key-red.is-lit::before {
-  background-color: var(--color-white);
+.key-red:hover {
+  background-color: #A50E15;
+  border-color: #A50E15;
+  box-shadow: none;
 }
 
-/* The one key that is currently selected: an ink cap. */
+/* The selected key (rail state). */
 .key.is-lit:not(.key-red) {
-  --cap: var(--pn-ink);
-  --cap-ink: var(--color-white);
-  --slit: var(--color-cyan);
+  color: var(--pn-enamel);
+  background-color: var(--pn-ink);
+  border-color: var(--pn-ink);
 }
 
-.key:focus-visible {
-  outline: 2px solid var(--color-cyan);
-  outline-offset: 4px;
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0.4rem 0.95rem;
+  font-family: var(--font-readout);
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: inherit;
+  background: transparent;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 80ms var(--ease-out), background-color 120ms linear;
+}
+
+.chip:hover {
+  background-color: rgba(34, 34, 34, 0.08);
+}
+
+.field-blue .chip:hover,
+.field-ink .chip:hover {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+.chip:active {
+  transform: translateY(1px);
+}
+
+.key:focus-visible,
+.chip:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -394,9 +416,13 @@ html {
   /* Stops iOS enlarging text in landscape, which shoves the sheet sideways. */
   text-size-adjust: 100%;
   scroll-padding-bottom: calc(var(--rail-h) + 2rem + env(safe-area-inset-bottom));
-  background-color: var(--color-light);
+  background-color: var(--pn-enamel);
+  /* Plain paper now: the drawing-sheet dot grid belonged to the old layout. */
+  background-size: 24px 24px;
+  background-position: -12px -12px;
   color: var(--color-dark);
   font-family: var(--font-body);
+  font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -405,24 +431,22 @@ body {
   overflow-x: hidden;
 }
 
-/* NOTE: font-family and line-height stay on this selector. Several headings
-   carry no local font-family and inherit Bungee from here -- removing the rule
-   wholesale would silently drop them to Outfit.
+:lang(ml) { font-family: var(--font-malayalam); }
 
-   What DID leave is `text-transform: uppercase`. Applying it to every heading
-   level was redundant where it worked (Bungee is already an all-caps display
-   face, so the transform changed nothing) and harmful everywhere else: it
-   forced body-level subheads like "Why Kochi?" and "Get Event Updates" to
-   shout, which removes case as a way to rank a heading. Display headings opt
-   in with .display-type; subheads are sentence case in the body font. */
+/* NOTE: font-family and line-height stay on this selector. Several headings
+   carry no local font-family and inherit Anton from here.
+   Display headings opt in to uppercase with .display-type; subheads are
+   sentence case in the body font. */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-headline);
+  font-weight: 400;
   line-height: 1.1;
 }
 
 /* Opt-in, for display headings only. */
 .display-type {
   font-family: var(--font-headline);
+  font-weight: 400;
   text-transform: uppercase;
 }
 
@@ -430,7 +454,7 @@ h1, h2, h3, h4, h5, h6 {
    ranked by weight rather than by volume. */
 .subhead {
   font-family: var(--font-body);
-  font-weight: 600;
+  font-weight: 500;
   font-size: var(--text-headline);
   line-height: var(--text-headline-lh);
   text-transform: none;
@@ -446,6 +470,28 @@ p {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+/* Big screens (2K/4K monitors, TVs) are read from further away: from 1920px
+   wide the whole rem scale grows with the width (16px at 1920, 32px at 3840),
+   and the 82.5rem measure with it. Never below the visitor's own setting. */
+@media (min-width: 1920px) {
+  html {
+    font-size: max(100%, 100vw / 120);
+  }
+}
+
+/* The rail's zoom steps (MakerHeader.vue), and the clearances built on it. */
+@media (min-width: 2400px) {
+  :root { --rail-h: 70px; }
+}
+
+@media (min-width: 2880px) {
+  :root { --rail-h: 84px; }
+}
+
+@media (min-width: 3600px) {
+  :root { --rail-h: 112px; }
 }
 
 /* Browser-owned surfaces. These ship with defaults belonging to no design
@@ -474,14 +520,9 @@ html {
   border-radius: 4px;
 }
 
-/* Every dark ground, not just two of them. The hero was missing, so focusing
-   either hero CTA drew an ink ring on an ink-dark scene — a keyboard user got no
-   visible focus change at all on the first two controls of the page. */
-.net-hero :focus-visible,
-.countdown-section :focus-visible,
-.maker-footer :focus-visible {
-  outline-color: var(--color-cyan);
-}
+/* The hero, countdown and footer used to be dark grounds with a bright cyan
+   focus ring. All three are paper now, so they keep the default ink ring --
+   cyan on paper is 2.34:1 and fails as a focus indicator (WCAG 1.4.11). */
 
 a {
   text-underline-offset: 0.18em;
@@ -499,11 +540,11 @@ a {
   min-height: 44px;
   padding: 0.85rem 1.75rem;
   font-family: var(--font-mono);
-  font-weight: 700;
+  font-weight: 500;
   font-size: 1.1rem;
   border: 1px solid transparent;
   border-radius: var(--radius-pill);
-  background-color: var(--color-white);
+  background-color: var(--pn-enamel);
   color: var(--color-dark);
   cursor: pointer;
   position: relative;
@@ -632,4 +673,135 @@ a {
   .section-padding {
     padding: 4rem 0;
   }
+}
+
+/* ── Fields ────────────────────────────────────────────────────────────────
+   The homepage is told in whole-section colour fields (paper, yellow, blue,
+   ink). A .field section is deliberately NOT positioned, so its background
+   paints below the 3D stage's canvas (fixed, z-index 0); every direct child
+   IS positioned at z-index 1, so all content paints above it. A figure's
+   slot is transparent, so the drawing appears on the field itself.
+   Do not add position or z-index to a .field: its background would cover
+   every figure inside it. */
+.field {
+  padding: clamp(4.5rem, 9vw, 8rem) 0;
+}
+
+.field > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* A full-screen chapter (ThreeSceneChapter) brings its own spacing. */
+.field.chapter-field {
+  padding: 0;
+}
+
+/* A section that is one screen at least, its content centred in it. */
+.field.screen {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.field-paper { background-color: var(--pn-enamel); color: var(--pn-ink); }
+.field-yellow { background-color: var(--field-yellow); color: var(--pn-ink); }
+.field-blue { background-color: var(--field-blue); color: var(--on-blue); }
+.field-ink { background-color: var(--color-ink); color: var(--on-blue); }
+
+/* One measure for the whole page. */
+.wrap {
+  width: min(100% - 2.5rem, 82.5rem);
+  margin-inline: auto;
+}
+
+/* Display type: the campaign's broad headline. */
+.display {
+  margin: 0;
+  font-family: var(--font-panel);
+  font-weight: 400;
+  font-size: clamp(2.6rem, 6.4vw, 6rem);
+  line-height: var(--lh-display);
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.display-2 {
+  margin: 0;
+  font-family: var(--font-panel);
+  font-weight: 400;
+  font-size: clamp(2rem, 4.2vw, 3.75rem);
+  line-height: var(--lh-display);
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.display-3 {
+  margin: 0;
+  font-family: var(--font-panel);
+  font-weight: 400;
+  font-size: clamp(1.4rem, 2.4vw, 2rem);
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.lede {
+  margin: 0;
+  font-family: var(--font-readout);
+  font-weight: 600;
+  font-size: clamp(1.25rem, 2vw, 1.6rem);
+  line-height: 1.35;
+  text-wrap: pretty;
+}
+
+.copy {
+  margin: 0;
+  max-width: 62ch;
+  font-family: var(--font-readout);
+  font-size: 1.125rem;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.copy + .copy {
+  margin-top: 1.1rem;
+}
+
+.label {
+  margin: 0;
+  font-family: var(--font-readout);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.field-blue .display,
+.field-blue .display-2 {
+  color: var(--on-blue-display);
+}
+
+.field-yellow .display,
+.field-yellow .display-2 {
+  color: var(--field-blue);
+}
+
+.field-blue :focus-visible,
+.field-ink :focus-visible {
+  outline-color: var(--field-yellow);
+}
+
+/* A light panel inside a dark field (When's yellow panel) takes the light-ground ring back. */
+.field-blue .field-yellow :focus-visible,
+.field-blue .field-paper :focus-visible,
+.field-ink .field-yellow :focus-visible {
+  outline-color: var(--focus-ring);
+}
+
+.field-blue a:not(.key),
+.field-ink a:not(.key) {
+  color: inherit;
 }
