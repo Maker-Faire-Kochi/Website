@@ -83,17 +83,6 @@ const M = MIRROR
 const ELBOW_R: P3 = { x: -0.62, y: -0.75, z: -0.15 }
 const ELBOW_L: P3 = { x: 0.62, y: -0.75, z: -0.15 }
 
-/**
- * While sawing, the left hand presses flat on the board's face ahead of the
- * handle, toward the cut (clear of the blade, which runs in the board's
- * middle plane): it steadies the work and draws the eyes along to the kerf.
- */
-const ON_BOARD: Hold = {
-  tool: 'board',
-  grip: { p: [0.16, BOARD.top - 0.045, BOARD.front - BOARD.z + 0.02], n: [0, 0, 1], kind: 'flat', radius: 0.02 },
-  // The hand is near the body's middle line: the elbow goes further out to stay clear of the ribs.
-  elbow: { x: 0.8, y: -0.58, z: -0.15 },
-}
 const BOARD_POSE = [0, 0, BOARD.z, 0, 0, 0]
 const SAW_GRIP: Hold = { tool: 'saw', grip: GRIPS.saw, elbow: ELBOW_R }
 const TOTE: Hold = { tool: 'plane', grip: GRIPS.tote, elbow: ELBOW_R }
@@ -105,11 +94,13 @@ const MALLET_GRIP: Hold = { tool: 'mallet', grip: GRIPS.mallet, elbow: { x: -0.9
 /** [left, right] per tool and phase. */
 const PLAN: Record<Tool, Partial<Record<PhaseName, [Hold | null, Hold | null]>>> = {
   saw: {
+    // The vice secures the work. Keep the free arm by the body: placing its
+    // palm on the board put the visible fingers across the blade's sweep.
     reach: [null, SAW_GRIP],
     fetch: [null, SAW_GRIP],
     pass: [null, SAW_GRIP],
-    place: [ON_BOARD, SAW_GRIP],
-    work: [ON_BOARD, SAW_GRIP],
+    place: [null, SAW_GRIP],
+    work: [null, SAW_GRIP],
     lift: [null, SAW_GRIP],
     unpass: [null, SAW_GRIP],
     return: [null, SAW_GRIP],

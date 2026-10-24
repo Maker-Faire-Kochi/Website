@@ -56,6 +56,8 @@ export default defineNuxtConfig({
     mailFrom: process.env.NUXT_MAIL_FROM || '',
     mailReplyTo: process.env.NUXT_MAIL_REPLY_TO || '',
     public: {
+      /** Microsoft Clarity stays disabled until a project ID is configured. */
+      clarityProjectId: '',
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL || '',
       supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY || '',
       /**

@@ -110,4 +110,27 @@ const invitations = [
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Phones: the same three ways, set tighter so the section reads in about a screen. */
+@media (max-width: 740px) {
+  .ways {
+    gap: 1.75rem;
+    margin-top: 1.75rem;
+  }
+
+  .way {
+    gap: 0.6rem;
+    padding-top: 1rem;
+  }
+
+  .way-body {
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  .call {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+  }
+}
 </style>

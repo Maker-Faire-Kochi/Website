@@ -20,6 +20,7 @@ import {
 import { buildPalm } from './palm'
 import { BODIES, BRUSH_MAX, DROPS, LEAN_MAX, RINGS, WAVELETS, World } from './sim'
 import { backwaterSound } from './sound'
+import { CoconutPlayback, coconutPose, scrollCoconut } from './scroll-coconut'
 
 /**
  * Fort Kochi backwater: a cheena vala dipping its net on a slow cycle, worked
@@ -153,6 +154,7 @@ export default async function create(ctx: SceneContext): Promise<SceneInstance> 
   const hullMat = new THREE.MeshBasicMaterial({ color: ctx.palette.ink, side: THREE.BackSide })
   own.push(hullMat)
   const nuts = new THREE.InstancedMesh(nutGeo, m.face.woodDark, NUT_COUNT)
+  nuts.name = 'coconuts'
   nuts.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
   const hull = new THREE.InstancedMesh(hullGeo, hullMat, NUT_COUNT)
   hull.instanceMatrix = nuts.instanceMatrix
@@ -212,6 +214,11 @@ export default async function create(ctx: SceneContext): Promise<SceneInstance> 
 
   // ── People: the fishers on the jetty, the bank, the kite ──────────────
   const crew = await createCrew(ctx, sim, nextTask)
+  const storyNut = !ctx.posterMode && scrollCoconut.enabled ? [crew.bonkPalm, 0] as const : null
+  sim.storyNut = storyNut
+  const storyStart: V3 = storyNut ? [...sim.nutWorld(storyNut[0], storyNut[1])] : [0, 0, 0]
+  const storyEnd: V3 = [storyStart[0] + 0.7, BANK.top + NUT_R * 0.9, storyStart[2] + 1]
+  const coconutPlayback = new CoconutPlayback()
   scene.add(crew.deck, crew.bank, crew.kite.root)
 
   // ── Hit proxies (invisible boxes: raycast cheaply, never drawn) ─────────
@@ -640,7 +647,7 @@ export default async function create(ctx: SceneContext): Promise<SceneInstance> 
         const u = Math.min(1, f.fall / DROP_TIME)
         heapPose(f.slot, dropEnd)
         dropEnd.decompose(dPos, dQ, dS)
-        fPos.set(BASKET.x, DECK.top + BASKET.h + 0.42, BASKET.z).lerp(dPos, u * u)
+        fPos.fromArray(f.drop).lerp(dPos, u * u)
         fQ.copy(dropStartQ).slerp(dQ, Math.min(1, u * 1.4))
         fM.compose(fPos, fQ, dS)
         putFish(n++, Math.sin(u * Math.PI * 3) * 0.6)
@@ -652,7 +659,7 @@ export default async function create(ctx: SceneContext): Promise<SceneInstance> 
         fPos.set(q[0], q[1] + 0.035 + flap3[0], q[2])
       }
       else {
-        fPos.copy(sHoop).addScaledVector(sU, (f.u - 0.5) * 0.3).addScaledVector(sV, (f.v - 0.5) * 0.3)
+        fPos.copy(sHoop)
         fPos.y -= 0.14 - flap3[0]
       }
       // On its side, the flank rolled up toward the net shot's camera (fish
@@ -791,10 +798,17 @@ export default async function create(ctx: SceneContext): Promise<SceneInstance> 
       const slots = sim.palms[i]!.nuts
       for (let k = 0; k < slots.length; k++) {
         const nut = slots[k]!
-        const s = nut.state === 'on' ? 1 : nut.state === 'grow' ? nut.grow * nut.grow * (3 - 2 * nut.grow) : 0
+        let s = nut.state === 'on' ? 1 : nut.state === 'grow' ? nut.grow * nut.grow * (3 - 2 * nut.grow) : 0
         const w = sim.nutWorld(i, k, alpha, tmp3)
         ps.set(w[0], w[1], w[2])
         qt.identity()
+        if (storyNut?.[0] === i && storyNut[1] === k) {
+          coconutPose(storyStart, storyEnd, coconutPlayback.progress, tmp3)
+          ps.fromArray(tmp3)
+          const turn = coconutPlayback.progress * 6
+          qt.set(0, 0, Math.sin(turn), Math.cos(turn))
+          s = 1
+        }
         sc.setScalar(Math.max(s, 1e-4))
         nuts.setMatrixAt(n++, mtx.compose(ps, qt, sc))
       }
@@ -816,7 +830,7 @@ export default async function create(ctx: SceneContext): Promise<SceneInstance> 
   // Dev only: lets the lab's capture scripts read the simulation and the catch.
   if (import.meta.dev && typeof window !== 'undefined') {
     const list = ((window as any).__backwaters ??= []) as unknown[]
-    list.push({ sim, crew, scrollShot, follower })
+    list.push({ sim, crew, scrollShot, follower, scrollCoconut, coconutPlayback, storyNut, nuts })
   }
 
   const inst: SceneInstance = {
@@ -834,6 +848,7 @@ export default async function create(ctx: SceneContext): Promise<SceneInstance> 
       sPrev = sCur
       follower.step(dt, scrollShot.progress)
       sCur = follower.s
+      if (storyNut) coconutPlayback.step(dt, scrollCoconut.progress, sCur >= 2.9)
       // Sounds for what this step made happen, at the step it happened.
       for (const e of sim.events) sound.event(e)
     },
@@ -884,7 +899,7 @@ export default async function create(ctx: SceneContext): Promise<SceneInstance> 
       if (p.kind === 'tap') {
         if (who !== -1) crew.tap(who)
         else if (t === 'boom') {
-          if (!crew.scoop.scooping) sim.requestDip()
+          if (!sim.holdCycle) sim.requestDip()
         }
         else if (t !== null) {
           // The crew decides whether this one is the easter egg (aimed at the kite kid).
@@ -916,7 +931,7 @@ export default async function create(ctx: SceneContext): Promise<SceneInstance> 
       if (name === 'dip') {
         switch (sim.phase) {
           case 'rest':
-            if (crew.scoop.scooping) return 'Wait: the fisher is landing the catch'
+            if (sim.holdCycle) return 'Wait: the fisher is landing the catch'
             sim.requestDip()
             return 'Net lowered'
           case 'lower': return 'Net is already going down'

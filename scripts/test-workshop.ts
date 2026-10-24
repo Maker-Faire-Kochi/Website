@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { DT, FixedClock } from '../app/three/core/clock'
 import type { Materials, MatKey } from '../app/three/core/kit'
 import { createPerson } from '../app/three/people/person'
+import { B } from '../app/three/people/motion'
 import { Carpenter } from '../app/three/scenes/workshop/carpenter'
 import {
   BOARD, CARPENTER, CHISEL, H, MALLET, MIRROR, PLANE, REST, SAW, STOOL_PARTS,
@@ -148,6 +149,7 @@ function snap(sim: WorkshopSim) {
   let sawSteps = 0
   let sawBad = 0
   let toeBad = 0
+  let buriedMin = Infinity
   let kerfMax = 0
   let planeSteps = 0
   let planeBad = 0
@@ -173,6 +175,15 @@ function snap(sim: WorkshopSim) {
       }
       // The toe, beyond the board, stays above the bench top.
       if (p[1]! <= H) toeBad++
+      // The blade works IN the wood, not beside it: length of teeth line
+      // inside the board's end and under its top edge, toe to heel.
+      let buried = 0
+      for (let r = 0; r <= SAW.teeth; r += 0.005) {
+        const x = p[0]! - r * Math.cos(SAW.angle)
+        const y = p[1]! + r * Math.sin(SAW.angle)
+        if (x <= BOARD.x1 && x >= BOARD.x0 && y < BOARD.top) buried += 0.005
+      }
+      buriedMin = Math.min(buriedMin, buried)
       kerfMax = Math.max(kerfMax, sim.kerf)
     }
     if (cur === 'plane' && ph === 'work') {
@@ -197,6 +208,7 @@ function snap(sim: WorkshopSim) {
   }
   assert(sawSteps > 0 && sawBad === 0, `saw rides its kerf: teeth on the kerf bottom, never below it (${sawSteps} work steps)`)
   assert(toeBad === 0, 'saw toe stays above the bench top')
+  assert(buriedMin >= 0.1, `the saw works inside the board: at least 10 cm of teeth in the wood on every stroke (min ${(buriedMin * 100).toFixed(1)} cm)`)
   assert(kerfMax > 0.03 && kerfMax <= SAW.maxDepth, `kerf deepens to ${(kerfMax * 1000).toFixed(1)} mm (max ${SAW.maxDepth * 1000} mm)`)
   assert(planeSteps > 0 && planeBad === 0, 'plane glides with its sole on the board edge, wholly on the board')
   assert(chiselBad === 0, 'chisel stands on the mortise bottom while it is struck')
@@ -553,6 +565,10 @@ const STATIC_PH = new Set(['reach', 'pass', 'set', 'unpass'])
   let knockBad = 0
   let maxKnockErr = 0
   let tooClose = 0
+  let handClearance = Infinity
+  let clearanceSteps = 0
+  const leftPalm = new THREE.Vector3()
+  const rightPalm = new THREE.Vector3()
   const seen = new Set<string>()
   for (let i = 0; i < 200 * 90; i++) {
     if (i === 200 * 2) sim.request('chisel')
@@ -562,6 +578,12 @@ const STATIC_PH = new Set(['reach', 'pass', 'set', 'unpass'])
     const cur = sim.timeline.current
     const ph = cur ? phaseOf(cur, sim.timeline.t).name : null
     if (cur && ph) seen.add(`${cur}:${ph}`)
+    if (cur === 'saw' && ph === 'work') {
+      person.handWorld('left', leftPalm)
+      person.handWorld('right', rightPalm)
+      handClearance = Math.min(handClearance, leftPalm.distanceTo(rightPalm))
+      clearanceSteps++
+    }
     // Every grip on a tool that is moving (or about to) is exact.
     for (const side of SIDES) {
       const h = carpenter.hands[side]
@@ -602,13 +624,15 @@ const STATIC_PH = new Set(['reach', 'pass', 'set', 'unpass'])
   assert(knocks >= PHASE.BLOWS && knockBad === 0 && maxKnockErr <= 1e-3,
     `every knock lands on the strike: face on the chisel, right hand on the mallet (${knocks} knocks, hand ${(maxKnockErr * 1000).toFixed(3)} mm)`)
   assert(tooClose === 0, 'the carpenter always stands clear of the bench and the board')
+  assert(clearanceSteps > 0 && Number.isFinite(handClearance) && handClearance >= 0.3,
+    `the actual free hand stays clear of the saw hand throughout its stroke (${(handClearance * 100).toFixed(1)} cm, ${clearanceSteps} samples)`)
 }
 
 // ── 10. A tap on the carpenter: look up, wave, then back to the same cut ──
 {
   const { sim, person, carpenter, step } = crew()
   sim.request('saw')
-  while (!(sim.timeline.current === 'saw' && phaseOf('saw', sim.timeline.t).name === 'work' && sim.kerf > 0.01)) step()
+  while (!(sim.timeline.current === 'saw' && phaseOf('saw', sim.timeline.t).name === 'work' && sim.kerf > SAW.startDepth + 0.005)) step()
   const msg = carpenter.requestWave()
   const before = sim.snapshot(new Float64Array(SNAP.size))
   const t0 = sim.timeline.t
@@ -923,6 +947,66 @@ const STATIC_PH = new Set(['reach', 'pass', 'set', 'unpass'])
   assert(lookSteps > 1000 && bad.look === 0, `eyes on the cut through every stroke (max ${deg(maxLook)} degrees off, ${lookSteps} steps)${at('look')}`)
   void H
   void steps
+}
+
+// Check the actual skinned free-arm vertices, including fingers: testing only
+// palm targets missed their visible overlap with the blade in the camera view.
+{
+  const { sim, person, step } = crew()
+  const meshes: { mesh: THREE.SkinnedMesh, indices: number[] }[] = []
+  const freeBones = new Set<number>([B.faL, B.handL, B.fiL])
+  person.root.traverse(o => {
+    const mesh = o as THREE.SkinnedMesh
+    if (!mesh.isSkinnedMesh || mesh.name !== `${CARPENTER.variant}:skin`) return
+    const a = mesh.geometry.attributes
+    const indices: number[] = []
+    for (let i = 0; i < a.position!.count; i++) {
+      for (let k = 0; k < 4; k++) {
+        if (freeBones.has(a.skinIndex!.getComponent(i, k)) && a.skinWeight!.getComponent(i, k) > 0.1) {
+          indices.push(i)
+          break
+        }
+      }
+    }
+    meshes.push({ mesh, indices })
+  })
+  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 40)
+  const target = new THREE.Vector3(0.2, 0.62, 0.05)
+  camera.position.copy(target).add(new THREE.Vector3(2.45 * MIRROR, 1.3, 1.6).normalize().multiplyScalar(12))
+  camera.lookAt(target)
+  camera.updateMatrixWorld()
+  const vertices = [new THREE.Vector3(-SAW.teeth, 0, 0), new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0.08, 0), new THREE.Vector3(-SAW.teeth, 0.12, 0)]
+  const blade = [new THREE.Triangle(vertices[0]!, vertices[1]!, vertices[2]!), new THREE.Triangle(vertices[0]!, vertices[2]!, vertices[3]!)]
+  const world = new THREE.Matrix4(), local = new THREE.Matrix4(), drawing = new THREE.Matrix4()
+  const q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), nearest = new THREE.Vector3()
+  const projected = vertices.map(() => new THREE.Vector3())
+  const projectedBlade = [new THREE.Triangle(projected[0]!, projected[1]!, projected[2]!), new THREE.Triangle(projected[0]!, projected[2]!, projected[3]!)]
+  let clearance = Infinity, screenClearance = Infinity, samples = 0
+  for (let n = 0; n < 200 * 10; n++) {
+    step()
+    if (n % 4 || sim.timeline.current !== 'saw' || phaseOf('saw', sim.timeline.t).name !== 'work') continue
+    person.frame(1)
+    person.root.updateMatrixWorld(true)
+    const p = sim.pose.saw
+    q.setFromEuler(e.set(p[3]!, p[4]!, p[5]!))
+    world.makeScale(MIRROR, 1, 1).multiply(local.compose(v.set(p[0]!, p[1]!, p[2]!), q, nearest.set(1, 1, 1)))
+    local.copy(world).invert()
+    drawing.multiplyMatrices(camera.matrixWorldInverse, world)
+    vertices.forEach((point, i) => { projected[i]!.copy(point).applyMatrix4(drawing).z = 0 })
+    for (const { mesh, indices } of meshes) {
+      mesh.skeleton.update()
+      for (const i of indices) {
+        mesh.getVertexPosition(i, v).applyMatrix4(mesh.matrixWorld).applyMatrix4(local)
+        for (const triangle of blade) clearance = Math.min(clearance, triangle.closestPointToPoint(v, nearest).distanceTo(v))
+        v.applyMatrix4(drawing).z = 0
+        for (const triangle of projectedBlade) screenClearance = Math.min(screenClearance, triangle.closestPointToPoint(v, nearest).distanceTo(v))
+      }
+    }
+    samples++
+  }
+  assert(samples > 100 && meshes.length > 0 && clearance > 0.1, `rendered free fingers and forearm stay clear of the blade (${(clearance * 100).toFixed(1)} cm, ${samples} full-mesh samples)`)
+  assert(Number.isFinite(screenClearance) && screenClearance > 0.03, `free fingers and forearm never visually overlap the blade (${(screenClearance * 100).toFixed(1)} cm projected gap)`)
+  person.dispose()
 }
 
 if (failed) {

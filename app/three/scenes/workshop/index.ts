@@ -131,7 +131,13 @@ export default async function create(ctx: SceneContext): Promise<SceneInstance> 
 
   // The bench and the room are one still drawing: two draws. (Built in two
   // tasks: the bench alone is most of a frame's budget.)
+  // collapse() takes each part relative to `world`'s mirrored matrix, so the
+  // bench must be IN world first to come out in the sim's frame with the
+  // board, vice and kerf where the saw and carpenter work. (Built outside it,
+  // it was flipped twice: the saw cut beside the vice, over solid board.) The
+  // room is scenery composed for this camera: left outside, it keeps that look.
   const bench = buildBench(m)
+  world.add(bench)
   await lap('bench')
   const still = collapse([bench, buildRoom(m)], world, vc, m.line, 'still')
   world.add(still.group)

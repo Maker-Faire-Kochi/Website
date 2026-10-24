@@ -10,9 +10,9 @@ import { rng, type Rng } from '../../core/rng'
  * water, unseen; they show once the net is out of the water again and lie in
  * its belly (a net position u, v near the middle), flapping now and then --
  * each flap throws a few drops that ring the water. At rest the scoop net
- * takes them (toHoop), carries them over the basket and tips them in
+ * takes one fish (toHoop), carries it over the basket and tips it in
  * (toBasket): they drop into the basket's mouth (`drop`, DROP_TIME) and settle
- * on the heap there. The basket's count only ever goes up.
+ * on the heap there. This repeats until the net is empty before the next dip.
  */
 
 export type FishWhere = 'off' | 'net' | 'hoop' | 'drop'
@@ -30,6 +30,8 @@ export interface Fish {
   /** Dropping into the basket: seconds since it left the scoop, and the place on the heap it lands in. */
   fall: number
   slot: number
+  /** World position at release, so dropping starts at the drawn scoop. */
+  drop: [number, number, number]
 }
 
 /** Where in the net the catch lies (u and v, both), and how long a fish is (m, nose to tail). */
@@ -45,7 +47,7 @@ export const EMPTY_SHARE = 0.3
 export const FLAP_TIME = 0.32
 
 export class Catch {
-  readonly fish: Fish[] = Array.from({ length: MAX_FISH }, () => ({ where: 'off', u: 0.5, v: 0.5, yaw: 0, len: 0.18, flap: -1, next: 1, fall: -1, slot: 0 }))
+  readonly fish: Fish[] = Array.from({ length: MAX_FISH }, () => ({ where: 'off', u: 0.5, v: 0.5, yaw: 0, len: 0.18, flap: -1, next: 1, fall: -1, slot: 0, drop: [0, 0, 0] }))
   /** Fish landed in the basket so far. */
   basket = 0
   /** Dips rolled, and how many came up empty. */
@@ -125,15 +127,13 @@ export class Catch {
     }
   }
 
-  /** The scoop takes every fish in the net. Returns how many. */
-  toHoop() {
-    let n = 0
-    for (const f of this.fish) {
-      if (f.where !== 'net') continue
-      f.where = 'hoop'
-      n++
-    }
-    return n
+  /** The scoop takes one fish; the rest wait in the raised net. */
+  toHoop(index = this.fish.findIndex(f => f.where === 'net')) {
+    if (this.count('hoop') || this.count('drop')) return 0
+    const f = this.fish[index]
+    if (!f || f.where !== 'net') return 0
+    f.where = 'hoop'
+    return 1
   }
 
   /** Fish in the basket that have settled on the heap (not still dropping in). */
@@ -142,13 +142,16 @@ export class Catch {
   }
 
   /** The scoop is tipped over the basket: its fish drop in. Returns how many. */
-  toBasket() {
+  toBasket(from: readonly number[] = [0, 0, 0]) {
     let n = 0
     for (const f of this.fish) {
       if (f.where !== 'hoop') continue
       f.where = 'drop'
       f.fall = 0
       f.flap = -1
+      f.drop[0] = from[0]!
+      f.drop[1] = from[1]!
+      f.drop[2] = from[2]!
       // Onto the heap, in order; once it is full they land on its top.
       f.slot = Math.min(BASKET_SHOW - 1, this.basket + n)
       n++

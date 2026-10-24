@@ -20,17 +20,18 @@ import { chromium } from 'playwright-core'
 import sharp from 'sharp'
 
 // The chapters' boxes stop at the dock's top, as the page measures them (SceneChapter.vue): about
-// 0.74 of a 16:10 desktop's height and about 0.4 of a phone's (above the dock and the pinned band).
-const CHAPTER = { desktop: 16 / 10, focus: '0.44 1 0 0.74', phone: 430 / 932, phoneFocus: '0 1 0 0.4' }
+// 0.74 of a 16:10 desktop's height. On a phone the drawing holds the screen above the chapter's
+// story cards, so each chapter's box is its own (measured at 430x932, 2026-10-24).
+const CHAPTER = { desktop: 16 / 10, focus: '0.44 1 0 0.74', phone: 430 / 932 }
 const SCENES = {
   // The hero is the whole first screen with no focus box (the words are keep-out walls); on a
   // phone it stacks under the headline, sized to the mat (80vw tall).
   hero: { desktop: 16 / 10, focus: '', phone: 1 / 0.8, phoneFocus: '' },
-  backwater: CHAPTER,
-  workshop: CHAPTER,
-  electronics: { ...CHAPTER, focus: '0 0.6 0 0.7' },
-  noise: CHAPTER,
-  machines: CHAPTER,
+  backwater: { ...CHAPTER, phoneFocus: '0 1 0 0.64' },
+  workshop: { ...CHAPTER, phoneFocus: '0 1 0 0.64' },
+  electronics: { ...CHAPTER, focus: '0 0.6 0 0.7', phoneFocus: '0 1 0 0.61' },
+  noise: { ...CHAPTER, phoneFocus: '0 1 0 0.7' },
+  machines: { ...CHAPTER, phoneFocus: '0 1 0 0.59' },
 }
 const WIDTHS = [768, 1440, 2160]
 const PHONE_WIDTH = 430

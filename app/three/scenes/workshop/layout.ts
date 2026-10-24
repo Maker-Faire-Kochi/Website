@@ -54,15 +54,25 @@ export const RACK = { x: 0.42, z: -0.3, low: H + 0.22, high: H + 0.52, peg: 0.25
 export const SAW = {
   teeth: 0.4,
   angle: 0.22,
-  /** Distance from the end grain to the toe at mid stroke. */
-  s0: 0.16,
+  /**
+   * Distance from the end grain to the toe at mid stroke. 0 keeps the blade
+   * IN the board: the toe runs 15 cm into the kerf on the pull and only
+   * passes the end grain on the push (it used to hang 1-31 cm out in the air).
+   */
+  s0: 0,
   /** Half the stroke: long, unhurried strokes, as a carpenter rips. */
   amp: 0.15,
   period: 1.1,
   strokes: 3,
   /** Kerf deepening (at the end grain) per metre of push stroke. */
-  cutRate: 0.035,
-  maxDepth: 0.045,
+  cutRate: 0.022,
+  /**
+   * The cut is already started when the carpenter takes the saw up, so the
+   * teeth sit well below the top edge from the first stroke.
+   */
+  startDepth: 0.055,
+  /** Deepest the toe can go and still clear the bench top (H) on the push. */
+  maxDepth: 0.075,
 }
 
 /** Plane: local origin at the sole centre, +x forward. Glide centre positions along the board's top edge. */

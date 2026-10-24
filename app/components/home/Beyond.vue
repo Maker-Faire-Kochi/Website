@@ -14,9 +14,11 @@
         <p class="lede beyond-lede">
           The beginning of an annual tradition.
         </p>
-        <p class="copy beyond-copy">
-          Ahead of Maker Faire Kochi 2028, TinkerHub will activate its 70-plus college chapters across Kerala, expand the roadshow into a multi-city series and grow a public Kerala Maker Directory.
-        </p>
+        <ReadMore class="beyond-copy">
+          <p class="copy">
+            Ahead of Maker Faire Kochi 2028, TinkerHub will activate its 70-plus college chapters across Kerala, expand the roadshow into a multi-city series and grow a public Kerala Maker Directory.
+          </p>
+        </ReadMore>
         <p class="beyond-credit">
           Built together by TinkerHub Foundation, MakerGram and Kerala Startup Mission.
         </p>

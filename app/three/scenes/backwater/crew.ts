@@ -290,7 +290,7 @@ export async function createCrew(
     return new THREE.Vector3(b[0], b[1] + 0.05, b[2])
   })()
   const dOut = belly.clone().sub(P)
-  const sOut = dOut.length()
+  let sOut = dOut.length()
   dOut.normalize()
   const overBasket = new THREE.Vector3(BASKET.x, DECK.top + BASKET.h + 0.48, BASKET.z)
   const dIn = overBasket.clone().sub(P)
@@ -302,6 +302,8 @@ export async function createCrew(
    * sliding through his hands; tipped over the basket; back on the rack.
    */
   const SC = { take: 0.45, reach: 0.8, join: 1.35, out: 1.35, dip: 1.6, back: 2.2, tip: 2.45, done: 2.75 }
+  let selectedFish = -1
+  const releaseAt = [0, 0, 0]
   /** Fisher 0's left hand goes back to the rope over this long after the scoop (s). */
   const REGRIP = 0.5
   const dNow = new THREE.Vector3().copy(dStore)
@@ -1055,7 +1057,14 @@ export async function createCrew(
     // At rest with fish in the net, fisher 0 scoops them out and tips them in the basket.
     scoop.prevHoop.copy(scoop.hoop)
     scoop.prevButt.copy(scoop.butt)
-    if (!scoop.scooping && phase === 'rest' && !paused && fishCatch.count('net') > 0 && !waveHand[0] && netShown) {
+    if (!scoop.scooping && time >= regripUntil && phase === 'rest' && !paused && fishCatch.count('net') > 0 && !waveHand[0] && netShown) {
+      selectedFish = fishCatch.fish.findIndex(f => f.where === 'net')
+      const fish = fishCatch.fish[selectedFish]!
+      const at = netAt(netCorners(sim.theta, cw4), fish.u, fish.v, sim.sag, p3)
+      // Put the bag directly under this fish rather than scooping the whole belly.
+      dOut.set(at[0], at[1] + 0.175, at[2]).sub(P)
+      sOut = dOut.length()
+      dOut.normalize()
       scoop.scooping = true
       scoop.t = 0
       glanceUntil[0] = 0
@@ -1063,9 +1072,14 @@ export async function createCrew(
     if (scoop.scooping) {
       const was = scoop.t
       scoop.t += dt
-      if (was < (SC.out + SC.dip) / 2 && scoop.t >= (SC.out + SC.dip) / 2) fishCatch.toHoop()
-      if (was < (SC.back + SC.tip) / 2 && scoop.t >= (SC.back + SC.tip) / 2) fishCatch.toBasket()
       polePose(scoop.t)
+      if (was < (SC.out + SC.dip) / 2 && scoop.t >= (SC.out + SC.dip) / 2) fishCatch.toHoop(selectedFish)
+      if (was < (SC.back + SC.tip) / 2 && scoop.t >= (SC.back + SC.tip) / 2) {
+        releaseAt[0] = scoop.hoop.x
+        releaseAt[1] = scoop.hoop.y - 0.14
+        releaseAt[2] = scoop.hoop.z
+        fishCatch.toBasket(releaseAt)
+      }
       if (scoop.t >= SC.done) {
         scoop.scooping = false
         scoop.t = -1
@@ -1073,6 +1087,8 @@ export async function createCrew(
         regripGlanced = false
       }
     }
+
+    sim.holdCycle = phase === 'rest' && (fishCatch.count('net') > 0 || scoop.scooping || time < regripUntil)
 
     // Fishers: queued waves wait for the boom to rest; the hands follow the haul.
     for (let i = 0; i < fishers.length; i++) {
