@@ -6,9 +6,9 @@ import { readPalette, type Palette } from './palette'
 /**
  * ONE WebGL renderer for the whole page.
  *
- * A fixed, full-viewport, pointer-events:none canvas sits behind the content
- * (z-index -1; the paper is painted on <html>, so the canvas shows through
- * anything without its own background). Each scene is bound to a DOM slot;
+ * An absolute, viewport-sized, pointer-events:none canvas sits behind the content
+ * (z-index 0, above section backgrounds and below positioned content).
+ * Each scene is bound to a DOM slot;
  * every frame, each slot that intersects the viewport is drawn with a
  * scissor/viewport equal to its rect. That is the three.js "multiple scenes"
  * pattern: one context however many drawings the page carries.
@@ -173,7 +173,7 @@ class Stage {
     // (positioned, z-index 1 -- see .field in main.css). That is what lets a
     // figure sit directly on a yellow or blue field.
     Object.assign(canvas.style, {
-      position: 'fixed', inset: '0', width: '100%', height: '100%',
+      position: 'absolute', top: '0', left: '0', width: '100%', height: '100%',
       zIndex: '0', pointerEvents: 'none', display: 'block',
     })
     document.body.prepend(canvas)
@@ -434,6 +434,11 @@ class Stage {
         this.sizeDirty = true
       }
     }
+    // Move the canvas and redraw in the same frame. Between frames the browser
+    // scrolls this absolute element with the document, keeping the last drawing
+    // attached to its slot even when mobile compositor scrolling outruns JS.
+    // A fixed canvas left the playground floating over the hero's moving text.
+    this.canvas.style.transform = `translate(${window.scrollX}px, ${window.scrollY}px)`
     const { h: vh, w: vw } = this.sizeCanvas()
     const r = this.renderer
     r.setScissorTest(false)
