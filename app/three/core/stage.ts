@@ -131,7 +131,7 @@ interface Slot {
 
 const MAX_PIXELS = 2.5e6
 const FRAME_SAMPLES = 240
-/** Most a slot's simulation may take of one frame (FixedClock.advance): a slow phone slows the motion a moment instead of stuttering. */
+/** Shared simulation budget across visible slots, leaving time for input and rendering. */
 const STEP_BUDGET_MS = 8
 
 export interface StageStats {
@@ -158,6 +158,11 @@ class Stage {
   /** Builds in flight: they count as "in use" so an idle release cannot dispose the stage under them. */
   private pending = 0
   private readonly size2 = new THREE.Vector2()
+  private builds: Promise<unknown> = Promise.resolve()
+  private sizeDirty = true
+  private adaptiveScale = 1
+  private slowFrames = 0
+  private fastFrames = 0
 
   constructor() {
     const canvas = document.createElement('canvas')
@@ -206,7 +211,7 @@ class Stage {
     // in. tick() still draws only what actually intersects the viewport.
     }, { rootMargin: '25% 0px' })
 
-    window.addEventListener('resize', this.kick, { passive: true })
+    window.addEventListener('resize', this.onResize, { passive: true })
     window.addEventListener('scroll', this.onScroll, { passive: true })
     document.addEventListener('visibilitychange', this.onVisibility)
     canvas.addEventListener('webglcontextlost', this.onLost)
@@ -219,10 +224,14 @@ class Stage {
    * unmounted or motion was turned off): the half-built scene is disposed.
    */
   async add(el: HTMLElement, factory: SceneFactory, hooks: { onFirstFrame: () => void, onFail: () => void, posterMode: boolean, isCancelled: () => boolean }): Promise<SlotHandle | null> {
-    const rect = el.getBoundingClientRect()
     this.pending++
     try {
-      return await this.build(el, factory, hooks, rect)
+      const queued = this.builds.catch(() => {}).then(async () => {
+        if (hooks.isCancelled() || this.disposed) return null
+        return this.build(el, factory, hooks, el.getBoundingClientRect())
+      })
+      this.builds = queued
+      return await queued
     }
     finally {
       this.pending--
@@ -328,7 +337,7 @@ class Stage {
     }
     this.slots.clear()
     this.io.disconnect()
-    window.removeEventListener('resize', this.kick)
+    window.removeEventListener('resize', this.onResize)
     window.removeEventListener('scroll', this.onScroll)
     document.removeEventListener('visibilitychange', this.onVisibility)
     this.canvas.removeEventListener('webglcontextlost', this.onLost)
@@ -361,6 +370,11 @@ class Stage {
     this.kick()
   }
 
+  private onResize = () => {
+    this.sizeDirty = true
+    this.kick()
+  }
+
   private onVisibility = () => {
     for (const s of this.slots) s.clock.reset()
     if (!document.hidden) this.kick()
@@ -384,13 +398,17 @@ class Stage {
   }
 
   private sizeCanvas() {
+    if (!this.sizeDirty) return { w: this.size2.x, h: this.size2.y }
+    this.sizeDirty = false
     const w = this.canvas.clientWidth
     const h = this.canvas.clientHeight
-    const cap = this.coarse ? 1.5 : 2
-    const dpr = Math.min(window.devicePixelRatio || 1, cap, Math.sqrt(MAX_PIXELS / Math.max(1, w * h)))
+    const cap = this.coarse || w < 768 ? 1.5 : 2
+    const base = Math.min(window.devicePixelRatio || 1, cap, Math.sqrt(MAX_PIXELS / Math.max(1, w * h)))
+    const dpr = Math.max(Math.min(1, base), base * this.adaptiveScale)
     if (this.renderer.getPixelRatio() !== dpr) this.renderer.setPixelRatio(dpr)
     const size = this.renderer.getSize(this.size2)
     if (size.x !== w || size.y !== h) this.renderer.setSize(w, h, false)
+    this.size2.set(w, h)
     return { w, h }
   }
 
@@ -398,8 +416,23 @@ class Stage {
     this.raf = 0
     if (this.lost) return
     if (this.lastFrame) {
-      this.frameMs.push(now - this.lastFrame)
+      const elapsed = now - this.lastFrame
+      this.frameMs.push(elapsed)
       if (this.frameMs.length > FRAME_SAMPLES) this.frameMs.shift()
+      // Sustained GPU pressure reduces pixels, preserving every object, effect,
+      // simulation and animation. Ignore isolated loading or tab-switch spikes.
+      this.slowFrames = elapsed > 24 && elapsed < 100 ? this.slowFrames + 1 : Math.max(0, this.slowFrames - 1)
+      this.fastFrames = elapsed < 18 ? this.fastFrames + 1 : 0
+      if (this.slowFrames >= 45 && this.adaptiveScale > 0.65) {
+        this.adaptiveScale = Math.max(0.65, this.adaptiveScale - 0.1)
+        this.slowFrames = 0
+        this.sizeDirty = true
+      }
+      else if (this.fastFrames >= 240 && this.adaptiveScale < 1) {
+        this.adaptiveScale = Math.min(1, this.adaptiveScale + 0.05)
+        this.fastFrames = 0
+        this.sizeDirty = true
+      }
     }
     const { h: vh, w: vw } = this.sizeCanvas()
     const r = this.renderer
@@ -409,10 +442,14 @@ class Stage {
 
     const running = this.motion === 'running' && !document.hidden
     let animating = false
+    const stepDeadline = performance.now() + STEP_BUDGET_MS
     for (const s of this.slots) {
       if (!s.visible) continue
       const rect = s.el.getBoundingClientRect()
-      if (rect.width < 1 || rect.height < 1 || rect.bottom <= 0 || rect.top >= vh || rect.right <= 0 || rect.left >= vw) continue
+      if (rect.width < 1 || rect.height < 1 || rect.bottom <= 0 || rect.top >= vh || rect.right <= 0 || rect.left >= vw) {
+        s.clock.reset()
+        continue
+      }
       if (rect.width !== s.w || rect.height !== s.h || (s.el.dataset.focus ?? '') !== s.focus) {
         s.w = rect.width
         s.h = rect.height
@@ -425,7 +462,7 @@ class Stage {
         }
         for (const p of s.queue) s.inst.pointer?.(p)
         s.queue.length = 0
-        const alpha = s.clock.advance(now, () => s.inst.step(DT), STEP_BUDGET_MS)
+        const alpha = s.clock.advance(now, () => s.inst.step(DT), Math.max(0, stepDeadline - performance.now()))
         s.inst.frame(alpha)
         animating = true
       }

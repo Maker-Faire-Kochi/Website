@@ -5,7 +5,7 @@ useHead({
 </script>
 
 <template>
-  <div class="admin-layout maker-app">
+  <div class="admin-layout maker-app" data-clarity-mask="true">
     <NuxtRouteAnnouncer />
     <BitsClickSpark selector=".key, .a-tab, .spark" />
     <SheetBar

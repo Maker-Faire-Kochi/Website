@@ -5,10 +5,9 @@
  * start and back against the stop, the way the simulated balancer on the page
  * does -- blinks, and the sheet lifts off.
  *
- * CSS only and about 1.37s end to end, so it needs no JS to finish and cannot
- * strand anyone behind it. It never takes pointer events, and reduced motion
- * skips it entirely. The lift stays at 950ms: the hero entrance (1050-1800ms)
- * is timed to it -- move them together.
+ * The sheet lifts once the first screen and fonts are ready, after the robot
+ * settles at 950ms. A CSS deadline also dismisses it without JavaScript. It
+ * never takes pointer events, and reduced motion skips it entirely.
  *
  * Geometry: the axle is the SVG origin, so the wheel spin and the body lean
  * both rotate about 0 0 (transform-box: view-box) without any pivot maths, and
@@ -25,10 +24,39 @@ const holes = Array.from({ length: 5 }, (_, i) => {
   const a = (i / 5) * Math.PI * 2 - Math.PI / 2
   return { x: +(Math.cos(a) * 9).toFixed(2), y: +(Math.sin(a) * 9).toFixed(2) }
 })
+
+const ready = ref(false)
+const sheet = ref<HTMLElement | null>(null)
+let disposed = false
+let fallback: ReturnType<typeof setTimeout> | undefined
+let minimum: ReturnType<typeof setTimeout> | undefined
+onMounted(async () => {
+  // Reveal a painted, hydrated first screen on phones. The CSS exit below is
+  // still a fallback if JavaScript is slow or unavailable.
+  const minWait = new Promise<void>(resolve => { minimum = setTimeout(resolve, Math.max(0, 950 - performance.now())) })
+  const maxWait = new Promise<void>(resolve => { fallback = setTimeout(resolve, 1800) })
+  const img = document.querySelector<HTMLImageElement>('.hero-stage .scene-poster img')
+  await Promise.all([minWait, Promise.race([
+    Promise.all([document.fonts.ready, img?.decode().catch(() => {})]),
+    maxWait,
+  ])])
+  if (!disposed && sheet.value) {
+    const style = getComputedStyle(sheet.value)
+    // Start a fresh exit animation. Changing only a running animation's delay
+    // would jump straight to its end on a slow phone.
+    if (style.visibility !== 'hidden' && style.transform === 'none') ready.value = true
+  }
+  clearTimeout(fallback)
+})
+onBeforeUnmount(() => {
+  disposed = true
+  clearTimeout(fallback)
+  clearTimeout(minimum)
+})
 </script>
 
 <template>
-  <div class="loader" aria-hidden="true">
+  <div ref="sheet" class="loader" :class="{ 'is-ready': ready }" aria-hidden="true">
     <div class="loader-sheet">
       <div class="loader-stage">
         <svg class="loader-bot" viewBox="-40 -112 80 134" :style="{ '--roll': `${ROLL}px`, '--spin': spin }">
@@ -79,7 +107,14 @@ const holes = Array.from({ length: 5 }, (_, i) => {
   inset: 0;
   z-index: 300;
   pointer-events: none;
-  animation: loader-lift 420ms cubic-bezier(0.7, 0, 0.3, 1) 950ms both;
+  overflow: clip;
+  animation: loader-lift 420ms cubic-bezier(0.7, 0, 0.3, 1) 2800ms both;
+  will-change: transform;
+}
+
+.loader.is-ready {
+  animation-name: loader-reveal;
+  animation-delay: 0ms;
 }
 
 .loader-sheet {
@@ -98,7 +133,7 @@ const holes = Array.from({ length: 5 }, (_, i) => {
 /* The robot rolls from left of its mark onto it; the ground stays put. */
 .loader-stage {
   position: relative;
-  width: 300px;
+  width: min(300px, 80vw);
   display: grid;
   justify-items: center;
 }
@@ -219,6 +254,7 @@ const holes = Array.from({ length: 5 }, (_, i) => {
 @keyframes loader-count { from { --pct: 0; } to { --pct: 100; } }
 @keyframes loader-bar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes loader-lift { to { transform: translateY(-100%); visibility: hidden; } }
+@keyframes loader-reveal { to { transform: translateY(-100%); visibility: hidden; } }
 
 @media (prefers-reduced-motion: reduce) {
   .loader {

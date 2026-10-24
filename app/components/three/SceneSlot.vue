@@ -1,16 +1,3 @@
-<script lang="ts">
-/** Page-wide: the slots' scene builds, chained so only one runs at a time (see onMounted). */
-let buildQueue: Promise<void> = Promise.resolve()
-
-/** One idle moment of the browser's (or a short wait where there is no requestIdleCallback). */
-function idleTurn(): Promise<void> {
-  return new Promise((resolve) => {
-    if ('requestIdleCallback' in window) requestIdleCallback(() => resolve(), { timeout: 1500 })
-    else setTimeout(resolve, 200)
-  })
-}
-</script>
-
 <script setup lang="ts">
 import type { SceneName } from '~/three/scenes'
 import type { SlotHandle, SlotPointer } from '~/three/core/stage'
@@ -34,6 +21,8 @@ const props = withDefaults(defineProps<{
   scene: SceneName
   /** Poster base path without width/extension, e.g. /img/scenes/hero -> hero-1440.avif */
   poster?: string
+  /** Cache revision for posters whose composition has changed. */
+  posterVersion?: string
   posterAlt?: string
   /** CSS selector for the ancestor that receives pointer input. */
   inputHost?: string
@@ -50,6 +39,7 @@ const emit = defineEmits<{ unavailable: [] }>()
 
 const root = ref<HTMLElement | null>(null)
 const showPoster = ref(true)
+const posterUrl = (width: number, ext: string) => `${props.poster}-${width}.${ext}${props.posterVersion ? `?v=${encodeURIComponent(props.posterVersion)}` : ''}`
 const { state, init } = useMotion()
 
 const IGNORE = 'a, button, input, select, textarea, label, summary, [role="button"], [contenteditable], [data-scene-ignore]'
@@ -86,8 +76,8 @@ function saveData() {
  */
 function afterLoadIdle(): Promise<void> {
   const idle = () => new Promise<void>((resolve) => {
-    if ('requestIdleCallback' in window) requestIdleCallback(() => resolve(), { timeout: 2500 })
-    else setTimeout(resolve, 300)
+    if ('requestIdleCallback' in window) requestIdleCallback(() => resolve(), { timeout: props.priority ? 250 : 750 })
+    else setTimeout(resolve, props.priority ? 0 : 100)
   })
   if (document.readyState === 'complete') return idle()
   return new Promise(resolve => window.addEventListener('load', () => idle().then(resolve), { once: true }))
@@ -285,16 +275,10 @@ onMounted(() => {
     near?.disconnect()
     near = null
     attach()
-  }, { rootMargin: '50% 0px' })
+  }, { rootMargin: '100% 0px' })
   near.observe(root.value!)
-  // Ahead of that: once the page is idle, every scene builds in page order, ONE
-  // at a time, while the visitor is still reading the top of the page -- so no
-  // build lands mid-scroll as a chapter comes near (that was the scroll jank),
-  // and a fast scroll never starts several at once. `near` stays the fallback.
-  buildQueue = buildQueue.then(async () => {
-    await idleTurn()
-    if (!cancelled && !reduced()) await attach()
-  })
+  // Prewarm a screen ahead. Distant scenes must not consume CPU or GPU memory
+  // while the visitor is reading the hero. Stage serialises all near builds.
 })
 
 watch(state, async (s) => {
@@ -321,11 +305,11 @@ onBeforeUnmount(() => {
     <picture v-if="poster" class="scene-poster" :class="{ 'is-hidden': !showPoster }">
       <!-- Art-directed: below 768px the phone composition (4:3, the phone cast)
            is a different drawing, so it is chosen by media, not by width. -->
-      <source :media="phoneMedia" type="image/avif" :srcset="`${poster}-768.avif`">
-      <source :media="phoneMedia" type="image/webp" :srcset="`${poster}-768.webp`">
-      <source type="image/avif" :srcset="`${poster}-1440.avif 1440w, ${poster}-2160.avif 2160w`" sizes="100vw">
-      <source type="image/webp" :srcset="`${poster}-1440.webp 1440w, ${poster}-2160.webp 2160w`" sizes="100vw">
-      <img :src="`${poster}-1440.webp`" :alt="posterAlt" :fetchpriority="priority ? 'high' : undefined" :loading="priority ? undefined : 'lazy'" :decoding="priority ? undefined : 'async'" :style="{ objectPosition: posterPosition }">
+      <source :media="phoneMedia" type="image/avif" :srcset="posterUrl(768, 'avif')">
+      <source :media="phoneMedia" type="image/webp" :srcset="posterUrl(768, 'webp')">
+      <source type="image/avif" :srcset="`${posterUrl(1440, 'avif')} 1440w, ${posterUrl(2160, 'avif')} 2160w`" sizes="100vw">
+      <source type="image/webp" :srcset="`${posterUrl(1440, 'webp')} 1440w, ${posterUrl(2160, 'webp')} 2160w`" sizes="100vw">
+      <img :src="posterUrl(1440, 'webp')" :alt="posterAlt" :fetchpriority="priority ? 'high' : undefined" :loading="priority ? undefined : 'lazy'" :decoding="priority ? undefined : 'async'" :style="{ objectPosition: posterPosition }">
     </picture>
   </div>
 </template>

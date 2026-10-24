@@ -13,6 +13,9 @@ node_modules
 logs
 *.log
 
+# Local browser screenshots and verification output
+artifacts/
+
 # Misc
 .DS_Store
 .fleet

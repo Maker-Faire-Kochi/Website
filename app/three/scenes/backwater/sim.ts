@@ -129,6 +129,10 @@ for (const u of [0, 0.5, 1]) for (const v of [0, 0.5, 1]) SAMPLES.push([u, v])
 
 export class World {
   readonly cycle = new DipCycle()
+  /** Keep the net raised while the crew land every fish and regrip the rope. */
+  holdCycle = false
+  /** Optional coconut reserved for the chapter's scroll-triggered sequence. */
+  storyNut: readonly [number, number] | null = null
   time = 0
   theta: number
   prevTheta: number
@@ -245,7 +249,7 @@ export class World {
   }
 
   hasNut(palm: number) {
-    return this.palms[palm]!.nuts.some(n => n.state === 'on')
+    return this.palms[palm]!.nuts.some((n, k) => n.state === 'on' && !(this.storyNut?.[0] === palm && this.storyNut[1] === k))
   }
 
   hasFreeBody() {
@@ -277,14 +281,14 @@ export class World {
   step(dt: number) {
     this.events.length = 0
     for (const q of this.queue) {
-      if (q.kind === 'dip') this.cycle.dip()
+      if (q.kind === 'dip') { if (!this.holdCycle) this.cycle.dip() }
       else if (q.kind === 'drop') this.drop(q.palm, q.aim)
       else this.brush(q.palm, q.dx, q.dz)
     }
     this.queue.length = 0
 
     this.time += dt
-    this.cycle.step(dt)
+    if (!this.holdCycle) this.cycle.step(dt)
     this.prevTheta = this.theta
     this.theta = this.cycle.theta
     const omega = (this.theta - this.prevTheta) / dt
@@ -479,7 +483,7 @@ export class World {
   private drop(palm: number, aim?: V3) {
     const p = this.palms[palm]
     if (!p) return
-    const ripe = p.nuts.map((n, k) => n.state === 'on' ? k : -1).filter(k => k >= 0)
+    const ripe = p.nuts.map((n, k) => n.state === 'on' && !(this.storyNut?.[0] === palm && this.storyNut[1] === k) ? k : -1).filter(k => k >= 0)
     if (!ripe.length) return
     // Reuse a free body, else the one that has lain longest.
     let b = this.bodies.find(x => x.mode === 'off')

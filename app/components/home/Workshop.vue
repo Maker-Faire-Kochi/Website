@@ -17,6 +17,7 @@ const steps = [
   <section id="workshop" class="field field-paper chapter-field" aria-labelledby="workshop-title">
     <ThreeSceneChapter
       scene="workshop"
+      poster-version="hand-clearance-2"
       focus="0.44 1 0 1"
       phone-focus="0 1 0 0.6"
       side="left"

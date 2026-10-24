@@ -19,7 +19,7 @@ import {
   catchSubject, machineSubject, netFraming, newFraming, shotFramings, type Cast,
 } from '../app/three/scenes/backwater/shots'
 import { FAR, ROPES, SCOOP, type V3 } from '../app/three/scenes/backwater/layout'
-import { FISH_LEN } from '../app/three/scenes/backwater/catch'
+import { FISH_LEN, MAX_FISH } from '../app/three/scenes/backwater/catch'
 
 // Stand-in for the stage's materials (the real ones need a canvas).
 function fakeMaterials(): Materials {
@@ -983,12 +983,26 @@ function tailDistance(i: number, p: THREE.Vector3) {
   let scoopReach = -Infinity
   let hoopFar = 0
   let fishBeforeEntry = 0
+  let batchTransfer = 0
+  let prematureDip = 0
+  let accounted = 0
+  let conservationErrors = 0
   const cycles = 8
-  for (let n = 0; n < Math.round(cycles * PERIOD / DT); n++) {
+  // Landing each fish extends the raised rest; count completed dips rather
+  // than assuming a full basket can be tipped in during a single fixed rest.
+  for (let n = 0; n < Math.round(cycles * (PERIOD + MAX_FISH * 3.5) / DT) && crew.catch.dips < cycles; n++) {
     const entering = sim.wet
+    const dipsBefore = crew.catch.dips
+    const waiting = crew.catch.count('net') + crew.catch.count('hoop') + crew.catch.count('drop')
     sim.step(DT)
     crew.step(DT)
     const cat = crew.catch
+    if (cat.dips !== dipsBefore) {
+      if (waiting > 0) prematureDip++
+      accounted += cat.count('net')
+    }
+    if (cat.count('hoop') > 1 || cat.count('drop') > 1 || cat.basket - lastBasket > 1) batchTransfer++
+    if (cat.basket + cat.count('net') + cat.count('hoop') !== accounted) conservationErrors++
     if (!entering && !sim.wet && cat.dips === 0 && cat.count('net') > 0) fishBeforeEntry++
     const inNet = cat.fish.filter(f => f.where === 'net')
     if (inNet.length && crew.netShown) {
@@ -1033,6 +1047,9 @@ function tailDistance(i: number, p: THREE.Vector3) {
   assert(scoops >= 1 && cat.basket > 0 && basketDown === 0, `the catch is scooped into the basket and the count only goes up (${scoops} scoops, ${cat.basket} fish landed)`)
   assert(scoopReach <= 1e-9 && hoopFar < 1e-9, `the scoop is worked within reach and the pole keeps its length (worst reach ${scoopReach.toFixed(4)} m)`)
   assert(cat.count('hoop') === 0 || crew.scoop.scooping, 'no fish are left in the scoop when it is put away')
+  assert(batchTransfer === 0, 'each scoop and basket release transfers exactly one fish at a time')
+  assert(prematureDip === 0, 'the next dip waits until every fish is collected')
+  assert(conservationErrors === 0, 'every caught fish is accounted for in the net, scoop or basket')
 }
 
 // ── Arms that look right: plausibility of every person's pose, all cycle ──

@@ -324,13 +324,13 @@ export function partsFor(d: Dims, look: Look): Part[] {
     if (full) creases(sleeveKeys, [-d.UA + 0.012 * H, -d.UA + 0.026 * H], PI / 2 - 0.55, PI / 2 + 0.55, 0.0008 * H, sl)
     // No rim line or cap edge at the top: it lies just under the shoulder, and as the arm
     // swings forward those lines broke through it as dark smudges.
-    add(ua, 'top', tube(sleeveKeys, 12, 2, { capStart: false }), { crease: 60, lines: sl, rims: 'noStart' })
+    add(ua, 'top', tube(sleeveKeys, 14, 2, { capStart: false }), { crease: 60, lines: sl, rims: 'noStart' })
     if (sleeveLen < 1) {
       // The bare arm starts well up inside the sleeve: it used to start below the hem, a
       // hollow ring you could see into with the arm raised.
       const y0 = -sleeveLen * d.UA + 0.025 * H
       const s0 = secAtY(armKeys, y0)
-      add(ua, 'skin', tube([{ ...s0, y: y0, a: s0.a * 0.97, b: s0.b * 0.97 }, ...armKeys.filter(k => k.y < y0 - 0.005 * H)], 10, 2))
+      add(ua, 'skin', tube([{ ...s0, y: y0, a: s0.a * 0.97, b: s0.b * 0.97 }, ...armKeys.filter(k => k.y < y0 - 0.005 * H)], 14, 2, { capStart: false, capEnd: false }), { rims: false })
     }
     const faKeys: Sec[] = [
       { y: 0.018 * H, a: ra * 0.5, b: ra * 0.55 },
@@ -358,7 +358,8 @@ export function partsFor(d: Dims, look: Look): Part[] {
       add(fa, 'top', tube(k, 10, 2), { lines, crease: 60 })
     }
     else {
-      add(fa, 'skin', tube(faKeys, 10, 2))
+      // The elbow and wrist are continuous skin, not outlined capped tubes.
+      add(fa, 'skin', tube(faKeys, 14, 2, { capStart: false, capEnd: false }), { rims: false })
       if (look.sleeves === 'rolled') {
         // The sleeve rolled up in two turns just below the elbow.
         const roll: Sec[] = [
@@ -396,7 +397,7 @@ export function partsFor(d: Dims, look: Look): Part[] {
       { y: d.neck + 0.02 * H, a: nr * 0.98, b: nr * 1.04, z: 0.003 * H },
       { y: d.neck + 0.05 * H, a: nr * 0.7, b: nr * 0.8, z: 0.0 },
     ]
-    add(B.head, d.headscarf ? 'scarf' : 'skin', tube(neckKeys, 10, 2))
+    add(B.head, d.headscarf ? 'scarf' : 'skin', tube(neckKeys, 14, 2, { capStart: false, capEnd: false }), { rims: false })
   }
   add(B.head, 'skin', tube(hd.keys, 26, 3, { disp: hd.disp }), { lines: faceLines(d, hd, look) })
   // The eyes: small dark ovals set in the sockets (vertex shade on the skin mesh: no extra draw call).

@@ -66,7 +66,7 @@ async function onSubmit(e: Event) {
           <a href="/" class="key">Back to Maker Faire Kochi</a>
         </div>
 
-        <form v-else novalidate @submit="onSubmit">
+        <form v-else novalidate data-clarity-mask="true" @submit="onSubmit">
           <!-- honeypot -->
           <div class="at-hp" aria-hidden="true">
             <label for="website">Website</label>
