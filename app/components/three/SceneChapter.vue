@@ -353,6 +353,7 @@ onUnmounted(() => {
         phone-media="(max-width: 740px), (max-height: 500px) and (pointer: coarse)"
         :poster-position="side === 'left' ? '72% 50%' : '30% 50%'"
         class="chapter-slot"
+        data-scroll-anchor="sticky"
         input-host=".chapter"
         @unavailable="unavailable = true"
       />

@@ -6,8 +6,10 @@ import { readPalette, type Palette } from './palette'
 /**
  * ONE WebGL renderer for the whole page.
  *
- * An absolute, viewport-sized, pointer-events:none canvas sits behind the content
+ * A viewport-sized, pointer-events:none canvas sits behind the content
  * (z-index 0, above section backgrounds and below positioned content).
+ * It follows the document for scrolling scenes and stays fixed while a
+ * sticky chapter is pinned, matching the browser's compositor in both cases.
  * Each scene is bound to a DOM slot;
  * every frame, each slot that intersects the viewport is drawn with a
  * scissor/viewport equal to its rect. That is the three.js "multiple scenes"
@@ -434,11 +436,16 @@ class Stage {
         this.sizeDirty = true
       }
     }
-    // Move the canvas and redraw in the same frame. Between frames the browser
-    // scrolls this absolute element with the document, keeping the last drawing
-    // attached to its slot even when mobile compositor scrolling outruns JS.
-    // A fixed canvas left the playground floating over the hero's moving text.
-    this.canvas.style.transform = `translate(${window.scrollX}px, ${window.scrollY}px)`
+    const visible = [...this.slots].filter(s => s.visible).map(s => ({ s, rect: s.el.getBoundingClientRect() }))
+    // Between JS frames the compositor scrolls an absolute canvas with the
+    // document. That keeps the playground aligned, but shakes a sticky scene
+    // whose slot stays still. Use a fixed canvas for the pinned part of every
+    // chapter; entering/leaving chapters still travel with the document.
+    const pinned = visible.some(({ s, rect }) => s.el.dataset.scrollAnchor === 'sticky' && rect.height > 0 && Math.abs(rect.top) < 0.5)
+    const position = pinned ? 'fixed' : 'absolute'
+    const transform = pinned ? 'none' : `translate(${window.scrollX}px, ${window.scrollY}px)`
+    if (this.canvas.style.position !== position) this.canvas.style.position = position
+    if (this.canvas.style.transform !== transform) this.canvas.style.transform = transform
     const { h: vh, w: vw } = this.sizeCanvas()
     const r = this.renderer
     r.setScissorTest(false)
@@ -448,9 +455,7 @@ class Stage {
     const running = this.motion === 'running' && !document.hidden
     let animating = false
     const stepDeadline = performance.now() + STEP_BUDGET_MS
-    for (const s of this.slots) {
-      if (!s.visible) continue
-      const rect = s.el.getBoundingClientRect()
+    for (const { s, rect } of visible) {
       if (rect.width < 1 || rect.height < 1 || rect.bottom <= 0 || rect.top >= vh || rect.right <= 0 || rect.left >= vw) {
         s.clock.reset()
         continue
