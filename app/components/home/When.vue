@@ -71,7 +71,8 @@ useHead({
       scene="machines"
       :hover-label="machinesLabel"
       focus="0.44 1 0 1"
-      phone-focus="0 1 0 0.6"
+      phone-focus="0 1 0 1"
+      poster-version="phone-story-1"
       side="left"
       style="--chapter-ground: var(--field-blue)"
       caption="The countdown, cranked out by a gear train: days, hours, minutes and seconds to the opening."
@@ -168,5 +169,17 @@ useHead({
 .when-live {
   margin-top: 1.5rem;
   color: var(--color-red-cta);
+}
+
+/* Phones: the date stays the biggest thing on the card, at a size that leaves the gears the screen. */
+@media (max-width: 740px), (max-height: 500px) and (pointer: coarse) {
+  .when-date {
+    margin-top: 1rem;
+    font-size: 2.75rem;
+  }
+
+  .when-fields {
+    gap: 1rem;
+  }
 }
 </style>

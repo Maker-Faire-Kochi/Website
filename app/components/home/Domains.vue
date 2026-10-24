@@ -7,7 +7,10 @@ import { Amphora, Anchor, Bot, CircuitBoard, CookingPot, Cuboid, Guitar, Hammer,
  * stall, under a striped awning. Without JavaScript, under reduced motion
  * (sideways scroll-jacking is a vestibular trigger), when the row already fits,
  * or when a stall is taller than the screen leaves room for (a landscape phone,
- * 200% zoom), it is a plain row that scrolls sideways on its own.
+ * 200% zoom), it is a plain row that scrolls sideways on its own. A phone
+ * never pins it: the words come first and the stalls are a row swiped
+ * sideways, one stall at a time, with the same meter under it (a pinned
+ * aisle cost a phone about nine screens of scrolling).
  *
  * The disciplines are deliberately not a tech list: roughly half are
  * non-technical, interleaved so no cluster reads as the "real" category.
@@ -35,7 +38,9 @@ const TONES = ['yellow', 'blue', 'paper', 'ink'] as const
 const { state: motion } = useMotion()
 const aisle = ref<HTMLElement | null>(null)
 const track = ref<HTMLElement | null>(null)
+const row = ref<HTMLElement | null>(null)
 const pinned = ref(false)
+const phone = ref(false)
 const height = ref<string | undefined>(undefined)
 const progress = ref(0)
 /** The domain stall nearest the middle of the screen, for the meter. */
@@ -61,7 +66,7 @@ function layout() {
   })
   const rail = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--rail-h')) || 58
   const fits = el.offsetHeight <= window.innerHeight - rail - 48
-  pinned.value = distance > 0 && fits && motion.value !== 'reduced'
+  pinned.value = distance > 0 && fits && motion.value !== 'reduced' && !phone.value
   height.value = pinned.value ? `${window.innerHeight + distance}px` : undefined
   update()
 }
@@ -102,6 +107,22 @@ function onScroll() {
   if (!raf) raf = requestAnimationFrame(update)
 }
 
+/** Phones: the meter follows the swiped row. */
+function onRowScroll() {
+  const r = row.value
+  const first = r?.querySelector<HTMLElement>('.stall')
+  if (!r || !first) return
+  const pitch = first.offsetWidth + (Number.parseFloat(getComputedStyle(r).columnGap) || 0)
+  at.value = Math.min(domains.length, Math.round(r.scrollLeft / Math.max(1, pitch)) + 1)
+  progress.value = Math.min(1, Math.max(0, r.scrollLeft / Math.max(1, r.scrollWidth - r.clientWidth)))
+}
+
+let mq: MediaQueryList | null = null
+const onMq = () => {
+  phone.value = Boolean(mq?.matches)
+  layout()
+}
+
 /** A keyboard visitor tabbing to a stall's link: scroll the page so that stall is on screen. */
 function onFocus(e: FocusEvent) {
   if (!pinned.value) return
@@ -117,6 +138,9 @@ function onFocus(e: FocusEvent) {
 }
 
 onMounted(() => {
+  mq = window.matchMedia('(max-width: 740px), (max-height: 500px) and (pointer: coarse)')
+  mq.addEventListener('change', onMq)
+  phone.value = mq.matches
   layout()
   window.addEventListener('scroll', onScroll, { passive: true })
   window.addEventListener('resize', layout, { passive: true })
@@ -128,6 +152,7 @@ onMounted(() => {
 watch(motion, layout)
 
 onUnmounted(() => {
+  mq?.removeEventListener('change', onMq)
   window.removeEventListener('scroll', onScroll)
   window.removeEventListener('resize', layout)
   document.fonts?.removeEventListener('loadingdone', layout)
@@ -154,7 +179,7 @@ onUnmounted(() => {
           </div>
 
           <!-- A set of disciplines, not a menu: only the stalls drawn on this page link anywhere. -->
-          <ol class="stalls" aria-label="Domains">
+          <ol ref="row" class="stalls" aria-label="Domains" @scroll.passive="onRowScroll">
             <li v-for="(s, i) in domains" :key="s.name" class="stall" :class="`tone-${TONES[i % TONES.length]}`">
               <div class="awning" aria-hidden="true" />
               <div class="stall-board">
@@ -169,7 +194,7 @@ onUnmounted(() => {
           </ol>
         </div>
 
-        <div v-if="pinned" class="aisle-meter" aria-hidden="true">
+        <div v-if="pinned || phone" class="aisle-meter" aria-hidden="true">
           <span class="meter-count">Domain {{ String(at).padStart(2, '0') }} / {{ domains.length }}</span>
           <span class="meter-track"><span class="meter-fill" :style="{ transform: `scaleX(${progress})` }" /></span>
         </div>
@@ -388,14 +413,56 @@ onUnmounted(() => {
   transform-origin: 0 50%;
 }
 
-@media (max-width: 740px) {
+/* Phones: the words, then the stalls as a row swiped one at a time, then the meter. */
+@media (max-width: 740px), (max-height: 500px) and (pointer: coarse) {
+  .aisle-sticky {
+    overflow: visible;
+    padding: 3.5rem 0;
+  }
+
+  .aisle-track {
+    display: block;
+    width: auto;
+    padding: 0;
+    will-change: auto;
+  }
+
+  .aisle-intro {
+    width: auto;
+    padding: 0 1.25rem;
+  }
+
+  .stalls {
+    gap: 1rem;
+    margin-top: 2rem;
+    padding: 0 1.25rem 6px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 1.25rem;
+    scrollbar-width: none;
+  }
+
   .stall {
-    width: 78vw;
-    min-height: min(58svh, 30rem);
+    flex: none;
+    width: min(78vw, 20rem);
+    min-height: 0;
+    scroll-snap-align: start;
+  }
+
+  .stall-board {
+    gap: 0.7rem;
+    padding: 1.25rem 1.25rem 1.5rem;
+  }
+
+  .stall-icon {
+    width: 64px;
+    height: 64px;
+    margin-top: 0;
   }
 
   .aisle-meter {
-    display: none;
+    position: static;
+    margin: 1.25rem 1.25rem 0;
   }
 }
 </style>

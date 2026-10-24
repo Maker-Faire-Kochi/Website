@@ -21,11 +21,14 @@ const stops = [
         <p class="lede">
           A global celebration of invention, creativity and hands-on learning.
         </p>
-        <!-- Experimental (Pretext): this paragraph re-wraps around the pointer. -->
-        <PretextFlowText class="copy what-flow" text="Since its launch in the Bay Area in 2006, Maker Faire has grown into a network of more than 200 licensed events across 40-plus countries, including 30-plus Featured Faires each year. Its two flagship editions in the United States draw over 200,000 visitors annually." />
-        <p class="copy">
-          Maker Faire Kochi is built collectively by TinkerHub Foundation, MakerGram and Kerala Startup Mission, giving Kerala’s labs, campuses and maker communities a shared public stage.
-        </p>
+        <!-- A phone shows the figures below and folds the history behind "Read more". -->
+        <ReadMore class="what-more">
+          <!-- Experimental (Pretext): this paragraph re-wraps around the pointer. -->
+          <PretextFlowText class="copy" text="Since its launch in the Bay Area in 2006, Maker Faire has grown into a network of more than 200 licensed events across 40-plus countries, including 30-plus Featured Faires each year. Its two flagship editions in the United States draw over 200,000 visitors annually." />
+          <p class="copy">
+            Maker Faire Kochi is built collectively by TinkerHub Foundation, MakerGram and Kerala Startup Mission, giving Kerala’s labs, campuses and maker communities a shared public stage.
+          </p>
+        </ReadMore>
       </div>
 
       <h3 class="label what-net">The global network</h3>
@@ -66,7 +69,7 @@ const stops = [
   color: var(--field-blue);
 }
 
-.what-flow {
+.what-more {
   margin-top: 1.25rem;
 }
 
@@ -170,6 +173,44 @@ const stops = [
 
   .stop-number {
     margin-top: 0;
+  }
+}
+
+/* Phones: the five stops as a grid of figures, two to a row, Kochi's across
+   the foot -- the vertical line ran to more than a screen on its own. */
+@media (max-width: 740px) {
+  .what-net {
+    margin-top: 2.5rem;
+  }
+
+  .timeline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem 1rem;
+    margin-top: 1rem;
+    padding-left: 0;
+  }
+
+  .timeline::before {
+    display: none;
+  }
+
+  .stop {
+    gap: 0.35rem;
+    padding-top: 0.75rem;
+    border-top: 2px solid var(--pn-ink);
+  }
+
+  .stop-dot {
+    display: none;
+  }
+
+  .stop-number {
+    font-size: 2.25rem;
+  }
+
+  .stop-here {
+    grid-column: 1 / -1;
+    border-top-color: var(--color-red-cta);
   }
 }
 </style>

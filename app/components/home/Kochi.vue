@@ -31,12 +31,14 @@ onUnmounted(() => {
       scene="backwater"
       tail
       focus="0.44 1 0 1"
-      phone-focus="0 1 0 0.6"
+      phone-focus="0 1 0 1"
+      poster-version="phone-story-1"
       side="left"
       caption="Cheena vala and coconut palms, Fort Kochi backwater. The world's longest-running open hardware project."
       hint="Tap the net or a palm."
       :controls="[{ action: 'dip', label: 'Dip the net' }, { action: 'drop-nut', label: 'Drop a coconut' }]"
       :step-actions="[null, null, 'dip', null]"
+      style="--chapter-tail: 130svh; --chapter-tail-phone: 70svh"
       @progress="onProgress"
       @tail-progress="scrollCoconut.progress = $event"
     >
@@ -48,9 +50,11 @@ onUnmounted(() => {
       </div>
       <div class="chapter-panel">
         <p class="kochi-figure"><span>98</span> Fab Foundation network labs in India, 25 to 30 of them in Kerala</p>
-        <p class="copy">
-          The state is home to roughly 25 to 30 of India’s 98 Fab Foundation network labs, 369 Atal Tinkering Labs and 28 Centres for Early Innovation, with 70 more planned. Kochi, Kerala’s innovation and startup hub, is the natural place to bring that work into public view.
-        </p>
+        <ReadMore>
+          <p class="copy">
+            The state is home to roughly 25 to 30 of India’s 98 Fab Foundation network labs, 369 Atal Tinkering Labs and 28 Centres for Early Innovation, with 70 more planned. Kochi, Kerala’s innovation and startup hub, is the natural place to bring that work into public view.
+          </p>
+        </ReadMore>
       </div>
       <div class="chapter-panel">
         <p class="copy">
@@ -61,17 +65,17 @@ onUnmounted(() => {
         <h3 class="display-3 mission-title">The mission</h3>
         <p v-if="view !== 'reduced'" class="coconut-cue">Keep scrolling to see a coconut fall.</p>
         <p class="lede mission-lede">To build a lasting maker culture in Kerala.</p>
-        <p class="copy mission-copy">
-          Maker Faire Kochi celebrates learning by building. It gives makers, students and hobbyists a reason to finish projects and share them, and connects a pathway from first workshop to incubation, Fab Academy and industry.
-        </p>
+        <ReadMore class="mission-copy">
+          <p class="copy">
+            Maker Faire Kochi celebrates learning by building. It gives makers, students and hobbyists a reason to finish projects and share them, and connects a pathway from first workshop to incubation, Fab Academy and industry.
+          </p>
+        </ReadMore>
       </div>
     </ThreeSceneChapter>
   </section>
 </template>
 
 <style scoped>
-/* Keep the bank view pinned long enough to see the coconut fall. */
-:deep(.chapter-panels) { padding-bottom: 130svh; }
 .coconut-cue {
   margin-top: 1rem;
   font-family: var(--font-readout);

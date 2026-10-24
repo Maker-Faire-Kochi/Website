@@ -6,7 +6,7 @@
  */
 const steps = [
   { title: 'Woodwork & Joinery', note: 'Not every maker works in code. Wood, edge tools and patience: the oldest kind of making on the faire floor.', action: null },
-  { title: 'Cut to the line', note: 'The saw takes the board to length, the cut started on the waste side of a pencil line.', action: 'saw' },
+  { title: 'Cut to the line', note: 'The saw rips down the board along a pencil line, its teeth working deeper into the cut with every push.', action: 'saw' },
   { title: 'True the face', note: 'The plane takes shavings off until the board is flat and square.', action: 'plane' },
   { title: 'Cut the joint', note: 'Mallet and chisel chop a mortise for each leg to sit in.', action: 'chisel' },
   { title: 'A stool', note: 'Four legs, the rails and a seat: every part made at this bench, shown here pulled apart.', action: 'stool' },
@@ -17,9 +17,9 @@ const steps = [
   <section id="workshop" class="field field-paper chapter-field" aria-labelledby="workshop-title">
     <ThreeSceneChapter
       scene="workshop"
-      poster-version="hand-clearance-2"
+      poster-version="phone-story-1"
       focus="0.44 1 0 1"
-      phone-focus="0 1 0 0.6"
+      phone-focus="0 1 0 1"
       side="left"
       caption="A carpenter at the bench: saw, plane, mallet and chisel, and a stool in exploded view."
       hint="Hover a tool, tap it to use it."
@@ -49,5 +49,15 @@ const steps = [
 
 .chapter-panel:first-child .display-2 {
   color: var(--field-blue);
+}
+
+@media (max-width: 740px), (max-height: 500px) and (pointer: coarse) {
+  .step-n {
+    margin-bottom: 0.5rem;
+  }
+
+  .step-note {
+    margin-top: 0.5rem;
+  }
 }
 </style>

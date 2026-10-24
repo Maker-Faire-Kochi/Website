@@ -705,6 +705,17 @@ a {
   justify-content: center;
 }
 
+/* A phone takes the content's own height: a full screen only padded short sections with empty field. */
+@media (max-width: 740px) {
+  .field {
+    padding: 3.5rem 0;
+  }
+
+  .field.screen {
+    min-height: 0;
+  }
+}
+
 .field-paper { background-color: var(--pn-enamel); color: var(--pn-ink); }
 .field-yellow { background-color: var(--field-yellow); color: var(--pn-ink); }
 .field-blue { background-color: var(--field-blue); color: var(--on-blue); }

@@ -22,7 +22,8 @@ const controls = [
     <ThreeSceneChapter
       scene="noise"
       focus="0.44 1 0 1"
-      phone-focus="0 1 0 0.6"
+      phone-focus="0 1 0 1"
+      poster-version="phone-story-1"
       side="left"
       style="--chapter-ground: var(--field-yellow)"
       caption="A noise machine and a pen plotter. Sound in, drawing out."
@@ -39,10 +40,15 @@ const controls = [
       <div class="chapter-panel">
         <p class="copy">
           Music and instruments, art and illustration: the loud, colourful side of
-          making. The noise machine here is playable. Hold the pointer down over it
-          and move to change the pitch, drag its knobs, and watch the plotter turn
-          what you play into a drawing.
+          making.
         </p>
+        <ReadMore class="noise-more">
+          <p class="copy">
+            The noise machine here is playable. Hold the pointer down over it
+            and move to change the pitch, drag its knobs, and watch the plotter turn
+            what you play into a drawing.
+          </p>
+        </ReadMore>
       </div>
     </ThreeSceneChapter>
   </section>
@@ -57,6 +63,10 @@ const controls = [
 /* The headline's deforming word takes the field's blue too, not its own accent. */
 .noise-title :deep(.nh-g.is-wave) {
   color: var(--field-blue);
+}
+
+.noise-more {
+  margin-top: 1.1rem;
 }
 
 .noise-lede {

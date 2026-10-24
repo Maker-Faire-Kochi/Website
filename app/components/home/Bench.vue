@@ -25,7 +25,8 @@ onUnmounted(() => {
       scene="electronics"
       :hover-label="electronicsLabel"
       focus="0 0.6 0 1"
-      phone-focus="0 1 0 0.6"
+      phone-focus="0 1 0 1"
+      poster-version="phone-story-1"
       side="right"
       caption="Electronics & IoT: a maker at the bench, soldering a single-board computer to a breadboard of LEDs, a button, a buzzer and a servo."
       hint="Hover a part to name it. Tap the board to boot it."
@@ -59,5 +60,15 @@ onUnmounted(() => {
 
 .step-note {
   margin-top: 0.9rem;
+}
+
+@media (max-width: 740px), (max-height: 500px) and (pointer: coarse) {
+  .step-n {
+    margin-bottom: 0.5rem;
+  }
+
+  .step-note {
+    margin-top: 0.5rem;
+  }
 }
 </style>

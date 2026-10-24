@@ -45,7 +45,11 @@ const slot = ref<{ action: (name: string) => string | null } | null>(null)
 const status = ref('')
 const unavailable = ref(false)
 const phone = ref(false)
+/** A landscape phone: the story's cards hold the left of the screen, the drawing the right. */
+const landscape = ref(false)
 const active = ref(-1)
+// A card's "Read more" folds again when the chapter moves on (ReadMore.vue).
+provide('chapterStep', active)
 
 const stage = ref<HTMLElement | null>(null)
 const dock = ref<HTMLElement | null>(null)
@@ -59,8 +63,10 @@ const dock = ref<HTMLElement | null>(null)
 const clearTo = ref<number | null>(null)
 
 /**
- * Phones reserve a stable space for the drawing and dock. Text scrolls in
- * the band beneath them, including panels longer than a screen.
+ * Phones tell the chapter as a story: the drawing holds the screen above
+ * `--stick`, and each panel is a card pinned below it, as tall as the
+ * chapter's tallest card needs (its own content, not the min-height that
+ * fills it to the screen's foot; a card opened with "Read more" is left out).
  */
 function measureBand() {
   const el = root.value
@@ -70,8 +76,22 @@ function measureBand() {
     el.style.removeProperty('--stick')
     return
   }
-  const dockHeight = dock.value?.offsetHeight ?? 0
-  const stick = Math.min(0.64 * s.height, Math.max(0.54 * s.height, dockHeight + 0.3 * s.height + 8))
+  if (landscape.value) {
+    el.style.setProperty('--stick', '0px')
+    return
+  }
+  let card = 0
+  el.querySelectorAll<HTMLElement>('.chapter-panel').forEach((p) => {
+    if (p.querySelector('.read-more.is-open')) return
+    const top = p.getBoundingClientRect().top
+    let bottom = top
+    for (const c of p.children) {
+      const r = c.getBoundingClientRect()
+      if (r.height > 1) bottom = Math.max(bottom, r.bottom)
+    }
+    card = Math.max(card, bottom - top + (Number.parseFloat(getComputedStyle(p).paddingBottom) || 0))
+  })
+  const stick = Math.min(0.8 * s.height, Math.max(0.45 * s.height, s.height - Math.max(card, 0.2 * s.height)))
   el.style.setProperty('--stick', `${Math.round(stick)}px`)
 }
 
@@ -88,8 +108,10 @@ function measureDock() {
   clearTo.value = Math.min((d.top - s.top) / s.height, navTop)
 }
 
+/** Right of the landscape cards (40% wide, see the styles). */
+const LANDSCAPE_FOCUS = '0.4 1 0 1'
 const focusNow = computed(() => {
-  const base = phone.value ? props.phoneFocus : props.focus
+  const base = phone.value ? (landscape.value ? LANDSCAPE_FOCUS : props.phoneFocus) : props.focus
   const to = clearTo.value
   if (to == null || !base.trim()) return base
   const [x0 = 0, x1 = 1, y0 = 0, y1 = 1] = base.trim().split(/\s+/).map(Number)
@@ -112,8 +134,8 @@ async function run(action: string) {
 let raf = 0
 
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x))
-/** Top of the phone reading band, including the stage leaving the viewport. */
-const pinTop = (_el: HTMLElement) => (Number.parseFloat(root.value?.style.getPropertyValue('--stick') ?? '') || window.innerHeight * 0.54) + (stage.value?.getBoundingClientRect().top ?? 0)
+/** Where a phone's cards pin, including the stage leaving the viewport. */
+const pinTop = () => (Number.parseFloat(root.value?.style.getPropertyValue('--stick') ?? '') || window.innerHeight * 0.74) + (stage.value?.getBoundingClientRect().top ?? 0)
 
 function measure() {
   raf = 0
@@ -121,11 +143,8 @@ function measure() {
   if (!items?.length) return
   let p = -1
   if (phone.value) {
-    const bandTop = pinTop(items[0]!)
-    const panels = items[0]!.parentElement!
-    const clip = Math.max(0, bandTop - panels.getBoundingClientRect().top)
-    panels.style.setProperty('--panel-clip', `${clip.toFixed(1)}px`)
-    // Phones: a panel's step begins when it reaches its pin in the band; the next panel's rise,
+    const bandTop = pinTop()
+    // Phones: a card's step begins when it reaches its pin; the next card's rise,
     // from the screen's foot to its own pin, carries the fraction between.
     const h = window.innerHeight
     items.forEach((el, i) => {
@@ -153,10 +172,17 @@ function measure() {
   emit('progress', Math.max(0, p))
   if (props.tail) {
     const last = items[items.length - 1]!
-    const padding = Number.parseFloat(getComputedStyle(last.parentElement!).paddingBottom) || 0
-    const anchor = phone.value ? pinTop(last) + last.offsetHeight : window.innerHeight * 0.5 + last.offsetHeight / 2
     const remaining = root.value!.getBoundingClientRect().bottom
-    emit('tailProgress', clamp01((anchor + padding - remaining) / (window.innerHeight * 0.8)))
+    if (phone.value) {
+      // The tail is the column's ::after: the last card stays pinned over it until the stage lets go.
+      const tail = Number.parseFloat(getComputedStyle(last.parentElement!, '::after').height) || 1
+      emit('tailProgress', clamp01(1 - (remaining - window.innerHeight) / tail))
+    }
+    else {
+      const padding = Number.parseFloat(getComputedStyle(last.parentElement!).paddingBottom) || 0
+      const anchor = window.innerHeight * 0.5 + last.offsetHeight / 2
+      emit('tailProgress', clamp01((anchor + padding - remaining) / (window.innerHeight * 0.8)))
+    }
   }
   const step = Math.floor(p)
   if (step === active.value && !missed) return
@@ -192,6 +218,41 @@ watch(motion, (m) => {
 
 function onScroll() {
   if (!raf) raf = requestAnimationFrame(measure)
+  if (phone.value) settleSoon()
+}
+
+/*
+ * Phones: a card left half risen when scrolling stops eases to the nearer
+ * whole step, so a step never rests half shown and its action plays in full
+ * view. Not while a finger is down, a card is open, or motion is reduced.
+ */
+let idle: ReturnType<typeof setTimeout> | undefined
+let touching = false
+
+function settleSoon() {
+  clearTimeout(idle)
+  idle = setTimeout(settle, 180)
+}
+
+function settle() {
+  const items = root.value?.querySelectorAll<HTMLElement>('.chapter-panel')
+  if (!phone.value || touching || view.value === 'reduced' || !onScreen() || !items || items.length < 2) return
+  if (root.value!.querySelector('.read-more.is-open')) return
+  const bandTop = pinTop()
+  const h = window.innerHeight
+  for (let i = 1; i < items.length; i++) {
+    const top = items[i]!.getBoundingClientRect().top
+    if (top <= bandTop + 2 || top >= h - 2) continue
+    const rise = (h - top) / Math.max(1, h - bandTop)
+    window.scrollBy({ top: rise > 0.5 ? top - bandTop : top - h, behavior: 'smooth' })
+    return
+  }
+}
+
+const onTouchStart = () => { touching = true }
+const onTouchEnd = () => {
+  touching = false
+  if (phone.value) settleSoon()
 }
 
 /* ── Hover callout ── */
@@ -226,6 +287,7 @@ function calloutOff(e?: PointerEvent) {
 }
 
 let mq: MediaQueryList | null = null
+let mqLand: MediaQueryList | null = null
 function measureLayout() {
   measureBand()
   measureDock()
@@ -234,6 +296,7 @@ function measureLayout() {
 
 const onMq = () => {
   phone.value = Boolean(mq?.matches)
+  landscape.value = phone.value && Boolean(mqLand?.matches)
   measureLayout()
 }
 // The dock and the panels wrap differently at every width, and the display face arriving late resizes them.
@@ -241,9 +304,14 @@ let dockObserver: ResizeObserver | null = null
 
 onMounted(() => {
   mq = window.matchMedia('(max-width: 740px), (max-height: 500px) and (pointer: coarse)')
+  mqLand = window.matchMedia('(orientation: landscape)')
   onMq()
   mq.addEventListener('change', onMq)
+  mqLand.addEventListener('change', onMq)
   window.addEventListener('scroll', onScroll, { passive: true })
+  window.addEventListener('touchstart', onTouchStart, { passive: true })
+  window.addEventListener('touchend', onTouchEnd, { passive: true })
+  window.addEventListener('touchcancel', onTouchEnd, { passive: true })
   dockObserver = new ResizeObserver(measureLayout)
   if (stage.value) dockObserver.observe(stage.value)
   if (dock.value) dockObserver.observe(dock.value)
@@ -254,15 +322,20 @@ onMounted(() => {
 onUnmounted(() => {
   dockObserver?.disconnect()
   mq?.removeEventListener('change', onMq)
+  mqLand?.removeEventListener('change', onMq)
   window.removeEventListener('scroll', onScroll)
+  window.removeEventListener('touchstart', onTouchStart)
+  window.removeEventListener('touchend', onTouchEnd)
+  window.removeEventListener('touchcancel', onTouchEnd)
   cancelAnimationFrame(raf)
   clearTimeout(retry)
+  clearTimeout(idle)
   calloutOff()
 })
 </script>
 
 <template>
-  <div ref="root" class="chapter" :class="`panels-${side}`" @pointerenter="calloutOn" @pointerleave="calloutOff">
+  <div ref="root" class="chapter" :class="`panels-${side}`" :data-step="active" @pointerenter="calloutOn" @pointerleave="calloutOff">
     <!-- First in reading order, so the section's heading comes before the
          drawing's caption and controls; CSS puts the stage first on screen. -->
     <div class="chapter-panels" data-scene-ignore>
@@ -288,7 +361,8 @@ onUnmounted(() => {
         <span class="chapter-callout-text" />
       </div>
       <div ref="dock" class="chapter-dock" data-scene-ignore>
-        <p class="chapter-caption">
+        <!-- Phones: the story cards say it; screen readers keep the caption. -->
+        <p class="chapter-caption" :class="{ 'visually-hidden': phone }">
           <span class="chapter-text">{{ caption }}</span>
           <span v-if="hint && view !== 'reduced' && !unavailable" class="chapter-hint" aria-hidden="true">{{ hint }}</span>
         </p>
@@ -386,13 +460,14 @@ onUnmounted(() => {
   margin-top: -100svh;
   /* Its right edge stays left of the focus box's 0.44 at every width. */
   width: min(34rem, 38%);
-  padding: 22svh 0 45svh clamp(1.25rem, 4vw, 4rem);
+  /* --chapter-tail: a chapter that plays out after its last panel (Kochi's coconut) asks for more. */
+  padding: 22svh 0 var(--chapter-tail, 45svh) clamp(1.25rem, 4vw, 4rem);
   pointer-events: none;
 }
 
 .panels-right .chapter-panels {
   margin-left: auto;
-  padding: 22svh clamp(1.25rem, 4vw, 4rem) 45svh 0;
+  padding: 22svh clamp(1.25rem, 4vw, 4rem) var(--chapter-tail, 45svh) 0;
 }
 
 .chapter-panels > :deep(.chapter-panel) {
@@ -487,46 +562,109 @@ onUnmounted(() => {
   }
 }
 
-/* Phones: the drawing owns the top of the screen. Text scrolls through the
-   band below the dock and is clipped as it passes underneath the drawing. */
+/* Phones: a story. The drawing holds the screen above --stick (measureBand:
+   whatever the chapter's tallest card leaves, 45 to 80% of it) with only the
+   controls docked under it; the caption is said by the cards, so it is kept
+   for screen readers only (visually-hidden, set from `phone`). Each panel is a card pinned below the drawing,
+   filling the band to the screen's foot; the next card slides up over it.
+   Every step holds for 60% of a screen of scrolling (card + gap), and
+   settle() rests the page on a whole step, so its action plays in view. */
 @media (max-width: 740px), (max-height: 500px) and (pointer: coarse) {
   /* measureBand() sets each chapter's own --stick in px; this is the first paint's. */
   .chapter {
-    --stick: 54svh;
+    --stick: 74svh;
   }
 
-  .chapter-dock {
+  .chapter-controls {
+    margin: 0 -6px;
+  }
+
+  .chapter-dock,
+  .panels-right .chapter-dock {
     top: auto;
-    right: 0.75rem;
     left: 0.75rem;
+    right: 0.75rem;
     bottom: calc(100svh - var(--stick) + 0.5rem);
     max-width: none;
-  }
-
-  .panels-right .chapter-dock {
-    left: 0.75rem;
-    right: 0.75rem;
+    padding: 0.2rem 0.6rem;
   }
 
   .chapter-panels,
   .panels-right .chapter-panels {
-    /* Text passes below the art rather than covering it or sticking with
-       its last lines trapped below the phone's navigation. */
-    clip-path: inset(var(--panel-clip, 0px) 0 0);
     width: auto;
-    gap: 50svh;
+    gap: calc(var(--stick) - 40svh);
     margin: -100svh 0 0;
-    /* Start the first panel below the drawing; reserve space after the last
-       line so it can clear the fixed navigation before the stage lets go. */
-    padding: var(--stick) 0 12svh;
+    padding: var(--stick) 0 0;
+  }
+
+  /* The last card stays pinned over this while the stage holds (a sticky card cannot use padding). */
+  .chapter-panels::after {
+    content: '';
+    flex: none;
+    height: var(--chapter-tail-phone, 25svh);
   }
 
   .chapter-panels > :deep(.chapter-panel) {
-    position: relative;
-    top: auto;
-    /* Fills the band to the screen's foot, so the panel under it never shows below. */
+    position: sticky;
+    top: var(--stick);
     min-height: calc(100svh - var(--stick));
-    padding: 1.25rem 1.25rem calc(var(--rail-h) + 1.5rem + env(safe-area-inset-bottom));
+    padding: 1rem 1.25rem calc(var(--rail-h) + 1rem + env(safe-area-inset-bottom));
+  }
+
+  /* Card type, a step down from the wide panels': the drawing keeps the room. */
+  .chapter-panels > :deep(.chapter-panel) .display,
+  .chapter-panels > :deep(.chapter-panel) .display-2 {
+    font-size: min(2.25rem, 8cqi);
+  }
+
+  .chapter-panels > :deep(.chapter-panel) .display-3 {
+    font-size: min(1.5rem, 6.5cqi);
+  }
+
+  .chapter-panels > :deep(.chapter-panel) .lede {
+    font-size: 1.125rem;
+  }
+
+  .chapter-panels > :deep(.chapter-panel) .copy {
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  /* "Read more": the open card rises over the drawing to hold its full text, to the
+     screen's foot, scrolling inside if it must. A transform, not `top`: a sticky card
+     never sits above its own place in the column, and its place must not change. */
+  .chapter-panels > :deep(.chapter-panel:has(.read-more.is-open)) {
+    transform: translateY(calc(10svh - var(--stick)));
+    min-height: 90svh;
+    max-height: 90svh;
+    overflow-y: auto;
+  }
+}
+
+/* A landscape phone is too short for a card under the drawing: the cards pin
+   down the left 40% of the screen, a whole screen each, the drawing holds the
+   rest (LANDSCAPE_FOCUS) with the controls docked on it, above the nav. */
+@media (max-width: 740px) and (orientation: landscape), (max-height: 500px) and (pointer: coarse) and (orientation: landscape) {
+  .chapter-dock,
+  .panels-right .chapter-dock {
+    left: calc(40% + 0.75rem);
+    bottom: calc(var(--rail-h) + 0.75rem + env(safe-area-inset-bottom));
+  }
+
+  .chapter-panels,
+  .panels-right .chapter-panels {
+    width: 40%;
+    gap: 0;
+  }
+
+  .chapter-panels > :deep(.chapter-panel) {
+    min-height: 100svh;
+  }
+
+  .chapter-panels > :deep(.chapter-panel:has(.read-more.is-open)) {
+    transform: none;
+    min-height: 100svh;
+    max-height: 100svh;
   }
 }
 </style>

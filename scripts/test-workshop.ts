@@ -149,6 +149,7 @@ function snap(sim: WorkshopSim) {
   let sawSteps = 0
   let sawBad = 0
   let toeBad = 0
+  let buriedMin = Infinity
   let kerfMax = 0
   let planeSteps = 0
   let planeBad = 0
@@ -174,6 +175,15 @@ function snap(sim: WorkshopSim) {
       }
       // The toe, beyond the board, stays above the bench top.
       if (p[1]! <= H) toeBad++
+      // The blade works IN the wood, not beside it: length of teeth line
+      // inside the board's end and under its top edge, toe to heel.
+      let buried = 0
+      for (let r = 0; r <= SAW.teeth; r += 0.005) {
+        const x = p[0]! - r * Math.cos(SAW.angle)
+        const y = p[1]! + r * Math.sin(SAW.angle)
+        if (x <= BOARD.x1 && x >= BOARD.x0 && y < BOARD.top) buried += 0.005
+      }
+      buriedMin = Math.min(buriedMin, buried)
       kerfMax = Math.max(kerfMax, sim.kerf)
     }
     if (cur === 'plane' && ph === 'work') {
@@ -198,6 +208,7 @@ function snap(sim: WorkshopSim) {
   }
   assert(sawSteps > 0 && sawBad === 0, `saw rides its kerf: teeth on the kerf bottom, never below it (${sawSteps} work steps)`)
   assert(toeBad === 0, 'saw toe stays above the bench top')
+  assert(buriedMin >= 0.1, `the saw works inside the board: at least 10 cm of teeth in the wood on every stroke (min ${(buriedMin * 100).toFixed(1)} cm)`)
   assert(kerfMax > 0.03 && kerfMax <= SAW.maxDepth, `kerf deepens to ${(kerfMax * 1000).toFixed(1)} mm (max ${SAW.maxDepth * 1000} mm)`)
   assert(planeSteps > 0 && planeBad === 0, 'plane glides with its sole on the board edge, wholly on the board')
   assert(chiselBad === 0, 'chisel stands on the mortise bottom while it is struck')
@@ -621,7 +632,7 @@ const STATIC_PH = new Set(['reach', 'pass', 'set', 'unpass'])
 {
   const { sim, person, carpenter, step } = crew()
   sim.request('saw')
-  while (!(sim.timeline.current === 'saw' && phaseOf('saw', sim.timeline.t).name === 'work' && sim.kerf > 0.01)) step()
+  while (!(sim.timeline.current === 'saw' && phaseOf('saw', sim.timeline.t).name === 'work' && sim.kerf > SAW.startDepth + 0.005)) step()
   const msg = carpenter.requestWave()
   const before = sim.snapshot(new Float64Array(SNAP.size))
   const t0 = sim.timeline.t

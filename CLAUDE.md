@@ -36,12 +36,25 @@ screen) · When (`#countdown`, blue machines chapter) · Beyond (`#beyond`, yell
   under 500px tall). **The focus box stops at the dock's top** (and the nav's): `SceneChapter`
   measures both (ResizeObserver) and trims the box's y1, so no scene frames its subject under
   them at any size. The props' boxes are the maximum; the live box is shorter.
-- **Phones (<= 740px): the drawing is never covered.** Each panel is `position: sticky` at the
-  chapter's `--stick` (54% down, or higher so the chapter's tallest panel fits, never above 30%;
-  `measureBand`, one pin per chapter so no covered panel peeks out) and fills the band to the
-  screen's foot; the next panel slides up over it. Steps on phones count from a panel reaching its
-  pin. The phone hero flattens its words block (`display: contents`) so the playground sits under
-  the headline and facts, sized to the mat (`min(68svh, 80vw)`).
+- **Phones (<= 740px, or a short touch screen): a story (2026-10-24; was 32 screens, now ~22 at
+  390x844).** The drawing holds the screen above the chapter's `--stick`; only the controls dock
+  under it (the caption is `visually-hidden` there, the cards say it). Each panel is a CARD,
+  `position: sticky` at `--stick` and filling to the screen's foot; the next card slides up over it.
+  `measureBand` sets one pin per chapter from its tallest card's own content (45-80% down). A step
+  holds 60svh of scrolling (card + `calc(var(--stick) - 40svh)` gap) and counts from a card reaching
+  its pin; `settle()` eases a card left half risen to the nearer whole step (not while touching,
+  a card is open, or motion is reduced). The column's TAIL is its `::after`
+  (`--chapter-tail-phone`; desktop: `--chapter-tail` padding), because a sticky card cannot stay
+  pinned through padding. Long copy goes in `<ReadMore>`: shown in full on wide screens and without
+  JS, folded on phones; an open card slides up over the drawing with a TRANSFORM (a sticky card
+  never sits above its own place, so `top` cannot raise it) and folds when the step changes
+  (`provide('chapterStep')`). Landscape phones put the cards
+  down the left 40% (a screen each) and the drawing right of them (`LANDSCAPE_FOCUS`). Short
+  sections drop their one-screen minimum on phones. `node scripts/check-mobile-flow.mjs` checks
+  every card at 320/390/430 wide and landscape: pinned, every line above the nav, on its step
+  (`data-step`), drawing >= 45% of the screen, page <= 25 screens, Read more, the Domains row.
+  The phone hero flattens its words block (`display: contents`) so the playground sits under
+  the headline and facts, sized to the mat (`min(68svh, 80vw)`); its controls are one sideways row.
 - **Smoothness:** every scene builds once the page is idle, in page order, one at a time
   (`buildQueue` in `SceneSlot.vue`), not mid-scroll as a chapter nears (`near` is the fallback);
   `FixedClock.advance` takes a wall-clock budget (stage: 8 ms per slot) so a slow phone slows the
@@ -54,7 +67,8 @@ screen) · When (`#countdown`, blue machines chapter) · Beyond (`#beyond`, yell
   slot-relative (correct for raycasting); a scene's own px (hover labels, `heroAnchors`) come out
   scaled by the box, so the page divides them by the box's width/height fractions
   (`SceneChapter` callout, `HeroLeaders`). Desktop boxes: hero `0.46 1 0 1`, bench `0 0.6 0 1`,
-  others `0.44 1 0 1` (the panels' right edge stays left of it); phones (<= 740px) `0 1 0 0.6`;
+  others `0.44 1 0 1` (the panels' right edge stays left of it); phones `0 1 0 1`, trimmed live
+  to the dock's top (the posters use each chapter's measured box, `render-poster.mjs`);
   the hero below 900px wide or 560px tall stacks under
   the words with no box. `/lab/<scene>?focus=0.44+1+0+1` outlines the box.
 - **Scroll-driven shots:** `electronics/shots.ts` and `backwater/shots.ts` export `SHOTS` and a
@@ -74,6 +88,8 @@ screen) · When (`#countdown`, blue machines chapter) · Beyond (`#beyond`, yell
 - **Domains** (`components/home/Domains.vue`) is a pinned "faire aisle": one striped-awning stall
   per discipline, scrolled sideways while the section is pinned (height = screen + row overflow);
   focusing a stall's link scrolls the page to it. No JS / row fits: a plain sideways-scrolling row.
+  Phones never pin it: the words, then the stalls as a row swiped one at a time (scroll snap), then
+  the meter, which follows the row's own scroll.
   The copy says "domain" (meter: "Domain 03 / 14"); "stall" is only the drawing and class names.
 - **No coplanar faces (z-fighting).** Two same-facing faces on one plane shimmer as the camera
   moves (the far shore's land and its stone edge did, under scroll). Stop one block short or sink
@@ -111,7 +127,10 @@ screen) · When (`#countdown`, blue machines chapter) · Beyond (`#beyond`, yell
     Tests use the dock-trimmed boxes. Keep-away rule: with perspective, anything near the camera but
     outside the focus box renders huge across the full-bleed slot, so every shot keeps people >= 6.6 m
     and palm trunks >= 8.5 m from the camera over the WHOLE slot (tested). Nothing moves without a cause.
-  - `workshop` — a carpenter seen three-quarter front: saw, plane, mallet + chisel worked with
+  - `workshop` — (the drawing is mirrored: `world.scale.x = MIRROR`. `collapse()` takes parts
+    relative to its root's world matrix, so a part must be IN `world` before it is collapsed or it
+    comes out flipped twice -- inside out and in the wrong frame. The bench was, until 2026-10-24,
+    and the saw "cut" beside the vice through the board's culled face.) A carpenter seen three-quarter front: saw, plane, mallet + chisel worked with
     wrapped grips (people `setHandTarget` axis/kind), weight moving with each stroke, eyes on the cut,
     walking between stands; exploded stool; full room. Tests check arm/torso clearance, elbow side,
     wrist limits, palm facing, fingers clear of tools and hand/shoulder speed.

@@ -105,11 +105,11 @@ export function sawWorkPose(depth: number, s: number, out: number[] | Pose) {
 
 /**
  * Where the saw is settled before the cut and lifted to after it: at its
- * cutting angle, a hand's breadth above
- * where it starts the cut.
+ * cutting angle, toe just past the end grain, a hand's breadth above the
+ * top edge. From here it slides down its own teeth line into the kerf.
  */
 export const SAW_HANDOVER: Pose = (() => {
-  const p = sawWorkPose(0, -SAW.amp, [0, 0, 0, 0, 0, 0]) as Pose
+  const p = sawWorkPose(0, 0.01 - SAW.s0, [0, 0, 0, 0, 0, 0]) as Pose
   p[1] += 0.05
   return p
 })()
@@ -173,7 +173,7 @@ export class WorkshopSim {
   readonly particles = new Particles(192)
   readonly pose: Record<ToolKey, number[]>
   /** Rip depth at the end grain; the cut runs up to the top edge at the saw's angle. */
-  kerf = 0
+  kerf = SAW.startDepth
   mortise = 0
   readonly shaving: Shaving = {
     L: 0, attached: false, resting: false,
@@ -277,7 +277,7 @@ export class WorkshopSim {
 
   private begin(tool: Tool) {
     if (tool === 'saw') {
-      this.kerf = 0
+      this.kerf = SAW.startDepth
     }
     else if (tool === 'plane') {
       const s = this.shaving

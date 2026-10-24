@@ -522,4 +522,21 @@ const { onLogoClick } = useEasterEggs((egg) => {
     justify-content: flex-start;
   }
 }
+
+/* Phones: the robot controls are one row that scrolls sideways, not three
+   wrapped rows under the playground. (Room for the focus ring, 3px out.) */
+@media (max-width: 740px) {
+  .hero-controls {
+    flex-wrap: nowrap;
+    align-self: stretch;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-inline: calc(-1 * var(--hero-gutter));
+    padding: 6px var(--hero-gutter);
+  }
+
+  .hero-controls .chip {
+    flex: none;
+  }
+}
 </style>
