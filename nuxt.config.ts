@@ -56,8 +56,8 @@ export default defineNuxtConfig({
     mailFrom: process.env.NUXT_MAIL_FROM || '',
     mailReplyTo: process.env.NUXT_MAIL_REPLY_TO || '',
     public: {
-      /** Microsoft Clarity stays disabled until a project ID is configured. */
-      clarityProjectId: '',
+      /** Read at build time too, for Cloudflare builds with build-only variables. */
+      clarityProjectId: process.env.NUXT_PUBLIC_CLARITY_PROJECT_ID || '',
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL || '',
       supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY || '',
       /**

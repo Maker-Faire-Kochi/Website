@@ -9,6 +9,13 @@ Leaving it empty disables tracking. The script loads once, after hydration and a
 turn, and is disabled in development and on direct visits to `/admin` or `/lab`.
 Application forms and the admin layout carry explicit content masking.
 
+On Cloudflare, add that exact variable to the **Production** environment and make
+it available to the build, then trigger a new deployment. Adding a variable does
+not change an existing deployment. Nuxt reads the ID at build time as well as
+accepting a matching runtime override, so builds keep the ID even when Cloudflare
+does not expose build variables to the running Worker. Configure Preview separately
+if those deployments should also collect analytics.
+
 Verify production in browser Network tools: the project tag should load from
 `https://www.clarity.ms/tag/z2fgjxhxv5`, followed by Clarity collection requests.
 Use Clarity's consent settings or your consent manager for cookie consent.
