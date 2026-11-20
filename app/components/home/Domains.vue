@@ -35,6 +35,14 @@ const domains = [
 
 const TONES = ['yellow', 'blue', 'paper', 'ink'] as const
 
+/** Every name is two lines: an "&" name breaks before it ("ROBOTICS" over "& AI"), a plain one at its first space ("3D" over "PRINTING"). */
+const nameLines = (n: string): string[] => {
+  const i = n.indexOf(' & ')
+  if (i >= 0) return [n.slice(0, i), `& ${n.slice(i + 3)}`]
+  const j = n.indexOf(' ')
+  return j < 0 ? [n] : [n.slice(0, j), n.slice(j + 1)]
+}
+
 const { state: motion } = useMotion()
 const aisle = ref<HTMLElement | null>(null)
 const track = ref<HTMLElement | null>(null)
@@ -184,7 +192,7 @@ onUnmounted(() => {
               <div class="stall-board">
                 <span class="stall-n" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
                 <component :is="s.icon" class="stall-icon" :size="96" :stroke-width="1.5" aria-hidden="true" />
-                <h3 class="stall-name">{{ s.name }}</h3>
+                <h3 class="stall-name"><span v-for="(l, j) in nameLines(s.name)" :key="j" class="stall-name-l">{{ l }}</span></h3>
                 <p class="stall-line">{{ s.line }}</p>
                 <div class="stall-foot">
                   <!-- The word and arrow follow page order: the hero and the backwater are above the aisle. -->
@@ -328,7 +336,10 @@ onUnmounted(() => {
   /* Two lines at most: a one-line name keeps the room so every board's copy starts on the same row. */
   min-height: 2.24em;
   text-transform: uppercase;
-  text-wrap: balance;
+}
+
+.stall-name-l {
+  display: block;
 }
 
 .stall-line {
