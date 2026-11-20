@@ -78,7 +78,7 @@ useHead({
       caption="The countdown, cranked out by a gear train: days, hours, minutes and seconds to the opening."
     >
       <div class="chapter-panel field-yellow">
-        <h2 id="when-title" class="display-2 when-title">
+        <h2 id="when-title" class="display-2">
           Two days in Kochi.<br />
           Makers from across Kerala.
         </h2>
@@ -122,10 +122,6 @@ useHead({
 </template>
 
 <style scoped>
-.when-title {
-  font-size: clamp(1.75rem, 3vw, 2.75rem);
-}
-
 .when-date {
   margin: 1.75rem 0 0;
   font-family: var(--font-panel);

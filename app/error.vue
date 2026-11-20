@@ -43,7 +43,7 @@ function go(path: string) {
         <div class="err-copy-col">
           <div class="err-title-box">
             <p v-if="missing" class="err-eyebrow">404 · Page not found</p>
-            <h1 class="err-title">
+            <h1 class="display err-title">
               <template v-if="missing">
                 We ran out of tokens, so we stopped.
               </template>
@@ -275,12 +275,7 @@ function go(path: string) {
 }
 
 .err-title {
-  margin: 0;
-  font-family: var(--font-panel);
   font-size: clamp(3rem, 8vw, 4.75rem);
-  font-weight: 400;
-  line-height: var(--lh-display);
-  text-transform: uppercase;
   color: var(--pn-ink);
 }
 
