@@ -76,8 +76,6 @@ useHead({
       side="left"
       style="--chapter-ground: var(--field-blue)"
       caption="The countdown, cranked out by a gear train: days, hours, minutes and seconds to the opening."
-      hint="Drag the red crank. Hover a gear."
-      :controls="[{ action: 'crank', label: 'Turn the crank' }, { action: 'reset', label: 'Reset' }]"
     >
       <div class="chapter-panel field-yellow">
         <h2 id="when-title" class="display-2 when-title">

@@ -4,6 +4,7 @@ import { addLights, disposeGeometries } from '../../core/kit'
 import { nextTask, type SceneContext, type SceneInstance, type SlotPointer } from '../../core/stage'
 import { buildBoom, buildGround, buildStones, boomProxies } from './cheenavala'
 import { createCrew } from './crew'
+import { createMarket } from './market'
 import { DUR, PERIOD, THETA_DOWN, THETA_UP, thetaAt } from './cycle'
 import { STROKES, TAIL, liftTimeAt, tailEnds } from './haul'
 import { BASKET_SHOW, DROP_TIME, MAX_FISH, flapPose } from './catch'
@@ -221,6 +222,12 @@ export default async function create(ctx: SceneContext): Promise<SceneInstance> 
   const coconutPlayback = new CoconutPlayback()
   scene.add(crew.deck, crew.bank, crew.kite.root)
 
+  // ── The fish market on the bank (market.ts): stalls of hung fish, a seller,
+  // a haggling customer and a browser, stepped beside the crew ─────────────
+  const fishGeo = buildFishGeometry()
+  const market = await createMarket(ctx, nextTask, fishGeo)
+  scene.add(market.root)
+
   // ── Hit proxies (invisible boxes: raycast cheaply, never drawn) ─────────
   const bp = boomProxies()
   own.push(bp.mat)
@@ -254,7 +261,7 @@ export default async function create(ctx: SceneContext): Promise<SceneInstance> 
   const figure = (p: Person, y: number) => ({ x: p.position.x, y, z: p.position.z, h: p.dims.H })
   const cast: Cast = {
     fishers: crew.fishers.map(p => figure(p, DECK.top)),
-    bank: crew.bankPeople.map(p => figure(p, BANK.top)),
+    bank: [...crew.bankPeople, ...market.people].map(p => figure(p, BANK.top)),
     kite: crew.fitPoints.map(v3),
   }
   const follower = new ShotFollower()
@@ -516,7 +523,6 @@ export default async function create(ctx: SceneContext): Promise<SceneInstance> 
 
   // ── Fish: silver-white bodies with dark backs (vertex colours), their
   // tails in the box mesh above, their outlines in the overlay lines ──
-  const fishGeo = buildFishGeometry()
   const fishMat = m.face.light.clone()
   fishMat.color.set('#ffffff')
   fishMat.vertexColors = true
@@ -845,6 +851,7 @@ export default async function create(ctx: SceneContext): Promise<SceneInstance> 
       sim.step(dt)
       // People after the simulation: their hands go where the rope is now.
       crew.step(dt)
+      market.step(dt)
       sPrev = sCur
       follower.step(dt, scrollShot.progress)
       sCur = follower.s
@@ -876,6 +883,7 @@ export default async function create(ctx: SceneContext): Promise<SceneInstance> 
       writeOverlay(th, phi, sim.prevSag + (sim.sag - sim.prevSag) * a)
       writeNuts(a)
       crew.frame(a)
+      market.frame(a)
       if (!paused && !ctx.posterMode) sound.frame(Math.abs(sim.theta - sim.prevTheta) / DT / OMEGA_MAX, hoverWater)
     },
     resize(w, h) {
@@ -968,6 +976,7 @@ export default async function create(ctx: SceneContext): Promise<SceneInstance> 
       // People share geometry between scenes: they dispose their own, first,
       // so the sweep below never reaches it.
       crew.dispose()
+      market.dispose()
       disposeGeometries(scene)
       nutGeo.dispose()
       fishGeo.dispose()

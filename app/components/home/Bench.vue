@@ -29,8 +29,6 @@ onUnmounted(() => {
       poster-version="phone-story-1"
       side="right"
       caption="Electronics & IoT: a maker at the bench, soldering a single-board computer to a breadboard of LEDs, a button, a buzzer and a servo."
-      hint="Hover a part to name it. Tap the board to boot it."
-      :controls="[{ action: 'boot', label: 'Boot' }, { action: 'button', label: 'Press button' }, { action: 'servo', label: 'Sweep servo' }, { action: 'chirp', label: 'Chirp' }, { action: 'solder', label: 'Solder' }, { action: 'measure', label: 'Measure' }, { action: 'drill', label: 'Drill' }, { action: 'saw', label: 'Saw' }, { action: 'lamp', label: 'Lamp' }, { action: 'wave', label: 'Wave' }]"
       @progress="onProgress"
     >
       <div v-for="(s, i) in SHOTS" :key="s.id" class="chapter-panel">

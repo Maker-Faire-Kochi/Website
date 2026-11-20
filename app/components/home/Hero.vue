@@ -12,8 +12,7 @@ import { heroKeepOut } from '~/three/core/signal'
  *
  * Text panels stay above the drawing (.field children are z-index 1) and the
  * robots' slot is transparent. Pointer input is taken from the whole hero so
- * the robots watch a cursor even over the words. Every pointer interaction has
- * a button below the stage (WCAG 2.1.1), announced in a polite live region.
+ * the robots watch a cursor even over the words.
  */
 const [endDay, ...endRest] = EVENT.rangeEnd.label.split(' ')
 const endMonth = endRest.join(' ')
@@ -26,15 +25,6 @@ const parts: { n?: string, swatch?: string, label: string }[] = [
   { n: '04', label: 'Robot dog' },
   { swatch: 'red', label: 'Drive · motors & wheels' },
   { swatch: 'cyan', label: 'Selected robot' },
-]
-
-const controls = [
-  { action: 'next', label: 'Next robot' },
-  { action: 'nudge', label: 'Nudge' },
-  { action: 'call', label: 'Call over' },
-  { action: 'shoo', label: 'Shoo' },
-  { action: 'look', label: 'Look here' },
-  { action: 'crash', label: 'Crash' },
 ]
 
 /**
@@ -85,7 +75,7 @@ function measureFocus() {
     if (logo) add(logo.getBoundingClientRect())
     const b = words.map(w => w.getBoundingClientRect()).filter(r => r.width > 0)
     if (b.length) add({ left: Math.min(...b.map(r => r.left)), right: Math.max(...b.map(r => r.right)), top: Math.min(...b.map(r => r.top)), bottom: Math.max(...b.map(r => r.bottom)) })
-    for (const el of [under.value, document.querySelector<HTMLElement>('.hero-hint')]) {
+    for (const el of [under.value]) {
       if (el) add(el.getBoundingClientRect())
     }
     // The floating nav rail too, so no robot plays under it.
@@ -129,22 +119,14 @@ onUnmounted(() => {
  */
 useState('hero-save-data', () => useRequestHeaders(['save-data'])['save-data'] === 'on')
 
-const { state: motion, view } = useMotion()
 const stage = ref<{ action: (name: string) => string | null } | null>(null)
 const status = ref('')
-/** The live drawing will never run for this visitor (Save-Data, no WebGL): no controls, no hint. */
-const unavailable = ref(false)
 
 async function announce(text: string) {
   // Cleared first so the same status twice is announced twice.
   status.value = ''
   await nextTick()
   status.value = text
-}
-
-function run(action: string) {
-  const out = stage.value?.action(action)
-  announce(out ?? (motion.value === 'running' ? 'The robots are still waking up.' : 'Motion is paused. Press Play motion to run the robots.'))
 }
 
 /** Easter eggs (useEasterEggs): each runs as a hero scene action. */
@@ -177,7 +159,6 @@ const { onLogoClick } = useEasterEggs((egg) => {
         priority
         phone-media="(max-width: 900px), (max-height: 600px)"
         poster-position="73% 50%"
-        @unavailable="unavailable = true"
       />
       <HeroLeaders />
 
@@ -232,10 +213,6 @@ const { onLogoClick } = useEasterEggs((egg) => {
         </div>
       </div>
 
-      <p v-if="view !== 'reduced' && !unavailable" class="hero-hint label" aria-hidden="true" data-scene-ignore>
-        Move your pointer. Grab a robot and throw it.
-      </p>
-
       <div ref="under" class="hero-under" data-scene-ignore>
         <ul class="hero-key" aria-label="Key to the drawing">
           <li v-for="p in parts" :key="p.label">
@@ -244,9 +221,6 @@ const { onLogoClick } = useEasterEggs((egg) => {
             {{ p.label }}
           </li>
         </ul>
-        <div v-if="view !== 'reduced' && !unavailable" class="hero-controls" role="group" aria-label="Robot controls">
-          <button v-for="c in controls" :key="c.action" type="button" class="chip" @click="run(c.action)">{{ c.label }}</button>
-        </div>
       </div>
       <p class="visually-hidden" aria-live="polite">{{ status }}</p>
     </div>
@@ -360,14 +334,6 @@ const { onLogoClick } = useEasterEggs((egg) => {
   margin: 1.5rem 0 auto;
 }
 
-.hero-hint {
-  position: absolute;
-  top: clamp(1.25rem, 2.5vw, 2rem);
-  right: var(--hero-gutter);
-  padding: 0.35rem 0;
-  color: var(--field-blue);
-}
-
 /* Clear of the floating nav, which now sits over the playground's lower edge. */
 .hero-under {
   position: absolute;
@@ -420,13 +386,6 @@ const { onLogoClick } = useEasterEggs((egg) => {
 
 .key-swatch.is-red { background: var(--color-red); }
 .key-swatch.is-cyan { background: var(--color-cyan); }
-
-.hero-controls {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.4rem;
-}
 
 /* Phones, narrow tablets and short screens (a landscape phone, a laptop at
    200% zoom; 600px, where the key box would meet the nav rail): the words,
@@ -504,10 +463,6 @@ const { onLogoClick } = useEasterEggs((egg) => {
     margin-top: 0.5rem;
   }
 
-  .hero-hint {
-    display: none;
-  }
-
   .hero-under {
     order: 8;
     position: static;
@@ -516,26 +471,8 @@ const { onLogoClick } = useEasterEggs((egg) => {
     padding: 0.75rem var(--hero-gutter) 1.5rem;
   }
 
-  .hero-key,
-  .hero-controls {
+  .hero-key {
     justify-content: flex-start;
-  }
-}
-
-/* Phones: the robot controls are one row that scrolls sideways, not three
-   wrapped rows under the playground. (Room for the focus ring, 3px out.) */
-@media (max-width: 740px) {
-  .hero-controls {
-    flex-wrap: nowrap;
-    align-self: stretch;
-    overflow-x: auto;
-    scrollbar-width: none;
-    margin-inline: calc(-1 * var(--hero-gutter));
-    padding: 6px var(--hero-gutter);
-  }
-
-  .hero-controls .chip {
-    flex: none;
   }
 }
 </style>
