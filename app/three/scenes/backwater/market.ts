@@ -24,13 +24,17 @@ const Y = BANK.top
 
 // ── Stalls ────────────────────────────────────────────────────────────────
 
-/** A beam between two points (the rafters under the sloped tarp). */
-const beamBetween = (ax: number, ay: number, az: number, bx: number, by: number, bz: number, r: number) => {
-  const dir = new THREE.Vector3(bx - ax, by - ay, bz - az)
-  const len = dir.length()
-  const g = beamGeometry(r, len + r * 4)
-  g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir.normalize()))
-  return { g, pos: [(ax + bx) / 2, (ay + by) / 2, (az + bz) / 2] as [number, number, number] }
+/** A beam between two points (the rafters under the sloped tarp): a kit beam lying along +x from a, plate face toward the side. */
+const beamBetween = (ax: number, ay: number, az: number, bx: number, by: number, bz: number, w: number) => {
+  const a = new THREE.Vector3(ax, ay, az), b = new THREE.Vector3(bx, by, bz)
+  const X = b.clone().sub(a)
+  const g = beamGeometry({ length: X.length(), width: w, thickness: 0.035 })
+  X.normalize()
+  const F = new THREE.Vector3(0, 0, 1)
+  const Z = F.clone().addScaledVector(X, -F.dot(X)).normalize()
+  const Y2 = new THREE.Vector3().crossVectors(Z, X)
+  const e = new THREE.Euler().setFromRotationMatrix(new THREE.Matrix4().makeBasis(X, Y2, Z))
+  return { g, pos: [a.x, a.y, a.z] as [number, number, number], rot: [e.x, e.y, e.z] as [number, number, number] }
 }
 
 /** Hung fish: scale, and the string length below the rail. */
@@ -120,9 +124,9 @@ function buildMarket(m: Materials, fishGeo: THREE.BufferGeometry, fishMat: THREE
     for (const sz of [-1, 1]) {
       const b = beamBetween(
         cx + d / 2 - 0.06, Y + postF - 0.05, cz + sz * (w / 2 - 0.06),
-        cx - d / 2 + 0.06, Y + postB - 0.05, cz + sz * (w / 2 - 0.06), 0.035,
+        cx - d / 2 + 0.06, Y + postB - 0.05, cz + sz * (w / 2 - 0.06), 0.07,
       )
-      add(b.g, 'woodDark', b.pos)
+      add(b.g, 'woodDark', b.pos, b.rot)
     }
     const tilt = Math.atan((postF - postB) / d)
     add(blockGeometry(d + 0.4, 0.045, w + 0.5), 'mid', [cx, Y + (postF + postB) / 2 + 0.05, cz], [0, 0, tilt])
