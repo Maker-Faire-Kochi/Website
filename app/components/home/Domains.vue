@@ -330,8 +330,8 @@ onUnmounted(() => {
   margin: auto 0 0;
   font-family: var(--font-panel);
   font-weight: 400;
-  /* Sized to the board: "RESTORATION" (about 10.5em) must fit its width. */
-  font-size: min(1.85rem, 9.2cqi);
+  /* Sized to the board: "& ILLUSTRATION" (the longest second line) must fit its width. */
+  font-size: min(1.8rem, 8.6cqi);
   line-height: 1.12;
   /* Two lines at most: a one-line name keeps the room so every board's copy starts on the same row. */
   min-height: 2.24em;
@@ -344,8 +344,8 @@ onUnmounted(() => {
 
 .stall-line {
   margin: 0;
-  /* Two lines at least: the links under them line up across the aisle. */
-  min-height: 3.1em;
+  /* Three lines at least (the longest blurb runs three): every board's name and foot sit on the same rows. */
+  min-height: 4.65em;
   font-family: var(--font-readout);
   font-size: 1rem;
   line-height: 1.55;
