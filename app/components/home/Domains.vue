@@ -4,7 +4,7 @@ import { Amphora, Anchor, Bot, CircuitBoard, CookingPot, Cuboid, Guitar, Hammer,
 /**
  * Where are the makers: a walk down the faire's aisle. The section pins for
  * as long as it takes to scroll the row of stalls past, one discipline per
- * stall, under a striped awning. Without JavaScript, under reduced motion
+ * stall board. Without JavaScript, under reduced motion
  * (sideways scroll-jacking is a vestibular trigger), when the row already fits,
  * or when a stall is taller than the screen leaves room for (a landscape phone,
  * 200% zoom), it is a plain row that scrolls sideways on its own. A phone
@@ -18,16 +18,16 @@ import { Amphora, Anchor, Bot, CircuitBoard, CookingPot, Cuboid, Guitar, Hammer,
  */
 const domains = [
   { name: 'Robotics & AI', line: 'Walking, rolling and balancing machines, and the code that steers them.', icon: Bot, href: '#top', up: true },
-  { name: 'Textiles & Weaving', line: 'Looms, handloom, embroidery and clothes that light up.', icon: Spool },
-  { name: 'Electronics & IoT', line: 'Boards, sensors and soldering irons: things that blink, beep and talk.', icon: CircuitBoard, href: '#bench' },
+  { name: 'Textiles & Weaving', line: 'Looms, handloom and embroidery, and clothes that light up.', icon: Spool },
+  { name: 'Electronics & IoT', line: 'Boards, sensors and soldering irons: things that blink and beep.', icon: CircuitBoard, href: '#bench' },
   { name: 'Cooking & Fermenting', line: 'Kitchen science: pickles, ferments and food made by experiment.', icon: CookingPot },
-  { name: '3D Printing', line: 'Printers, prints and the people who tune them.', icon: Cuboid },
+  { name: '3D Printing', line: 'Printers, printed parts and the people who tune them to sing.', icon: Cuboid },
   { name: 'Woodwork & Joinery', line: 'Saws, planes and chisels: furniture, toys and tools.', icon: Hammer, href: '#workshop' },
-  { name: 'Repair & Restoration', line: 'Fixing instead of replacing: radios, bicycles, clocks.', icon: Wrench },
-  { name: 'Pottery & Clay', line: 'Wheels, kilns and hand-built forms.', icon: Amphora },
+  { name: 'Repair & Restoration', line: 'Fixing instead of replacing: radios, bicycles and clocks.', icon: Wrench },
+  { name: 'Pottery & Clay', line: 'Wheels, kilns and hand-built forms, from cups to sculpture.', icon: Amphora },
   { name: 'Boats, Nets & Rope', line: 'The craft of the backwaters: nets, knots, hulls and rigging.', icon: Anchor, href: '#kochi', up: true },
-  { name: 'Music & Instruments', line: 'Instruments built, hacked and played; synths and noise machines.', icon: Guitar, href: '#noise' },
-  { name: 'Green Tech & Farming', line: 'Solar, compost, water and growing things.', icon: Sprout },
+  { name: 'Music & Instruments', line: 'Instruments built, hacked and played: synths and noise machines.', icon: Guitar, href: '#noise' },
+  { name: 'Green Tech & Farming', line: 'Solar, compost and water systems, and things that grow.', icon: Sprout },
   { name: 'Toys, Kites & Games', line: 'Things made to play with, from kites to board games.', icon: ToyBrick, href: '#kochi', up: true },
   { name: 'Art & Illustration', line: 'Drawing, printmaking, murals and machines that draw.', icon: Palette, href: '#noise' },
   { name: 'Science & Space', line: 'Telescopes, rockets, weather stations and backyard experiments.', icon: Telescope },
@@ -181,14 +181,15 @@ onUnmounted(() => {
           <!-- A set of disciplines, not a menu: only the stalls drawn on this page link anywhere. -->
           <ol ref="row" class="stalls" aria-label="Domains" @scroll.passive="onRowScroll">
             <li v-for="(s, i) in domains" :key="s.name" class="stall" :class="`tone-${TONES[i % TONES.length]}`">
-              <div class="awning" aria-hidden="true" />
               <div class="stall-board">
                 <span class="stall-n" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
                 <component :is="s.icon" class="stall-icon" :size="96" :stroke-width="1.5" aria-hidden="true" />
                 <h3 class="stall-name">{{ s.name }}</h3>
                 <p class="stall-line">{{ s.line }}</p>
-                <!-- The word and arrow follow page order: the hero and the backwater are above the aisle. -->
-                <a v-if="s.href" :href="s.href" class="stall-link" :class="{ 'is-up': s.up }">See it drawn {{ s.up ? 'above' : 'below' }}</a>
+                <div class="stall-foot">
+                  <!-- The word and arrow follow page order: the hero and the backwater are above the aisle. -->
+                  <a v-if="s.href" :href="s.href" class="stall-link" :class="{ 'is-up': s.up }">See it drawn {{ s.up ? 'above' : 'below' }}</a>
+                </div>
               </div>
             </li>
           </ol>
@@ -260,10 +261,8 @@ onUnmounted(() => {
   list-style: none;
 }
 
-/* One stall: a striped awning with a scalloped valance over a sign board. */
+/* One stall: a plain sign board in its tone. */
 .stall {
-  --a1: var(--field-blue);
-  --a2: var(--pn-enamel);
   --ground: var(--field-yellow);
   --ink: var(--pn-ink);
   --accent: var(--field-blue);
@@ -274,35 +273,20 @@ onUnmounted(() => {
 }
 
 .tone-blue {
-  --a1: var(--field-yellow);
-  --a2: var(--field-blue);
   --ground: var(--field-blue);
   --ink: var(--on-blue);
   --accent: var(--field-yellow);
 }
 
 .tone-paper {
-  --a1: var(--color-cyan);
-  --a2: var(--pn-enamel);
   --ground: #fff;
   --accent: var(--field-blue);
 }
 
 .tone-ink {
-  --a1: var(--field-yellow);
-  --a2: var(--color-ink);
   --ground: var(--color-ink);
   --ink: var(--on-blue);
   --accent: var(--field-yellow);
-}
-
-.awning {
-  flex: none;
-  height: 4.25rem;
-  background:
-    radial-gradient(circle at 25% 0, var(--a1) 1.25rem, transparent calc(1.25rem + 0.5px)) 0 3rem / 5rem 1.25rem repeat-x,
-    radial-gradient(circle at 75% 0, var(--a2) 1.25rem, transparent calc(1.25rem + 0.5px)) 0 3rem / 5rem 1.25rem repeat-x,
-    repeating-linear-gradient(90deg, var(--a1) 0 2.5rem, var(--a2) 2.5rem 5rem) 0 0 / 100% 3rem no-repeat;
 }
 
 .stall-board {
@@ -311,7 +295,6 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
-  margin-top: 0.75rem;
   padding: 1.5rem 1.5rem 1.75rem;
   background: var(--ground);
   color: var(--ink);
@@ -342,15 +325,24 @@ onUnmounted(() => {
   /* Sized to the board: "RESTORATION" (about 10.5em) must fit its width. */
   font-size: min(1.85rem, 9.2cqi);
   line-height: 1.12;
+  /* Two lines at most: a one-line name keeps the room so every board's copy starts on the same row. */
+  min-height: 2.24em;
   text-transform: uppercase;
   text-wrap: balance;
 }
 
 .stall-line {
   margin: 0;
+  /* Two lines at least: the links under them line up across the aisle. */
+  min-height: 3.1em;
   font-family: var(--font-readout);
   font-size: 1rem;
   line-height: 1.55;
+}
+
+/* Every board keeps a link's worth of room at the foot, linked or not, so all fourteen read alike. */
+.stall-foot {
+  min-height: 44px;
 }
 
 .stall-link {

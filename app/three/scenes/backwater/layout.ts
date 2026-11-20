@@ -201,6 +201,46 @@ export const CLUSTER_DEPTH = Math.max(...STONES.map(s => -YOKE_Y + s.len + s.h /
 /** Pendulum length to the cluster's centre of mass. */
 export const CLUSTER_L = 0.6
 
+// ── The fish market ───────────────────────────────────────────────────────
+
+/**
+ * A small fish market on the bank south-east of the people, like the vendors
+ * who take the catch straight off the cheena vala: a covered stall (posts, a
+ * tarp sloped to the back, a counter and a rail of hung fish) and an open
+ * fish table beside it, fronts open toward +x where the bank shot's camera
+ * stands. This is the one pocket left of the people that is clear of every
+ * shot's sightline to them and still 7 m off every camera -- a second covered
+ * stall cannot fit both, so the second pitch is a low table the sightlines
+ * pass over. All of it is checked in the loom block of test-backwater.ts.
+ */
+export interface StallSpec {
+  /** Centre of the footprint. */
+  x: number
+  z: number
+  /** Front width along z, depth along x (the open front faces +x). */
+  w: number
+  d: number
+  /** Post heights above the bank: front (+x, taller -- the tarp slopes down to the back), back. 0 for a table. */
+  postF: number
+  postB: number
+  kind: 'tarp' | 'table'
+}
+export const STALLS: StallSpec[] = [
+  { x: 11.8, z: 2.4, w: 2.2, d: 1.8, postF: 2.5, postB: 2.1, kind: 'tarp' },
+  { x: 14.4, z: 1.4, w: 1.6, d: 1.4, postF: 0, postB: 0, kind: 'table' },
+]
+/** A table's highest point, for the loom and sightline checks. */
+export const TABLE_TOP = 1.05
+/** The rail the fish hang from: height above the bank, this far in from the front posts. */
+export const RAIL_Y = 1.72
+export const RAIL_IN = 0.14
+/** Counter: height above the bank, set this far in from the front posts. */
+export const COUNTER = { y: 0.93, in: 0.35, d: 0.5 }
+/** Where the market people stand: the seller behind stall 0's counter, a haggling customer in front of it, a browser at the table. */
+export const MARKET_SELLER = { x: 11.6, z: 2.4 }
+export const MARKET_BUYER = { x: 13.25, z: 2.5 }
+export const MARKET_BROWSER = { x: 15.35, z: 1.4 }
+
 // ── Coconut palms ─────────────────────────────────────────────────────────
 
 /** Trunk: a stack of short straight segments, each turned back a little towards vertical. */

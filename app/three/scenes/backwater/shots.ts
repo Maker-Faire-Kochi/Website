@@ -1,5 +1,5 @@
 import { FISH_UV } from './catch'
-import { BOOM, CLUSTER_DEPTH, DECK, FULCRUM, HANG_LOCAL, NET, PALMS, ROPES, boomToWorld, netCorners, netPoint, palmPoint, type V3 } from './layout'
+import { BANK, BOOM, CLUSTER_DEPTH, DECK, FULCRUM, HANG_LOCAL, NET, PALMS, ROPES, STALLS, TABLE_TOP, boomToWorld, netCorners, netPoint, palmPoint, type V3 } from './layout'
 import { THETA_DOWN, THETA_UP } from './cycle'
 
 /**
@@ -162,7 +162,10 @@ export function fitFraming(pts: V3[], az: number, el: number, aspect: number, pa
       if (depth <= 0 || depth >= k.min) continue
       const u = (dot(k.p, right) - cx) / (depth * TAN_HALF * aspect)
       const v = (dot(k.p, up) - cy) / (depth * TAN_HALF)
-      if (u >= SLOT_U && u <= 1.05 && v >= SLOT_V && v <= 1.05) need = Math.max(need, z + k.min)
+      // A hand's breadth past the minimum: the rule is a lower bound, so the
+      // camera holds a clear margin, not knife-edge on it (and screen shapes
+      // the tests do not measure stay inside the rule too).
+      if (u >= SLOT_U && u <= 1.05 && v >= SLOT_V && v <= 1.05) need = Math.max(need, z + k.min + 0.06)
     }
     if (need <= cz) break
     cz = need
@@ -255,13 +258,20 @@ export function fishersSubject(c: Cast): V3[] {
   return pts
 }
 
-/** The bank: the people and the kite, and the cheena vala's pivot and counterweight end behind them. */
+/** The bank: the people and the kite, the market's stalls behind them, and the cheena vala's pivot and counterweight end behind that. */
 export function bankSubject(c: Cast): V3[] {
   const pts: V3[] = []
   for (const f of c.bank) figurePts(f, pts)
   pts.push(...c.kite)
   pts.push([FULCRUM[0], FULCRUM[1] + 0.35, FULCRUM[2]])
   rearPts(THETA_UP, pts)
+  // The market (market.ts): posts and the sloped tarp, and the low fish table.
+  for (const s of STALLS) {
+    const top = s.kind === 'tarp' ? s.postF : TABLE_TOP
+    for (const dx of [-s.d / 2, s.d / 2]) for (const dz of [-s.w / 2, s.w / 2]) {
+      pts.push([s.x + dx, BANK.top, s.z + dz], [s.x + dx, BANK.top + (dx > 0 ? top : Math.min(top, s.postB || top)) + 0.2, s.z + dz])
+    }
+  }
   return pts
 }
 
@@ -342,8 +352,9 @@ export function shotFramings(cast: Cast, aspect: number, out: Framing[]) {
 
 /**
  * What must not loom near a camera (a perspective one, whose frame the page
- * extends over the whole full-bleed slot): the people (6 m), the kite (6 m)
- * and the palms' trunks (8 m: a near trunk slices the whole frame).
+ * extends over the whole full-bleed slot): the people (6 m), the kite (6 m),
+ * the palms' trunks (8 m: a near trunk slices the whole frame) and the market
+ * stalls' posts (7 m: a near stall is a wall).
  */
 export function keepAway(cast: Cast): Keep[] {
   const out: Keep[] = []
@@ -352,6 +363,12 @@ export function keepAway(cast: Cast): Keep[] {
   for (const sp of PALMS) {
     const c = palmPoint(sp, [0, 0], [0, 0], [0, 0, 0])
     for (let k = 0; k <= 10; k++) out.push({ p: [sp.base[0] + (c[0] - sp.base[0]) * k / 10, sp.base[1] + (c[1] - sp.base[1]) * k / 10, sp.base[2] + (c[2] - sp.base[2]) * k / 10], min: 8.5 })
+  }
+  for (const s of STALLS) {
+    const top = s.kind === 'tarp' ? s.postF : TABLE_TOP
+    for (const dx of [-s.d / 2, s.d / 2]) for (const dz of [-s.w / 2, s.w / 2]) {
+      out.push({ p: [s.x + dx, BANK.top, s.z + dz], min: 7 }, { p: [s.x + dx, BANK.top + top, s.z + dz], min: 7 })
+    }
   }
   return out
 }

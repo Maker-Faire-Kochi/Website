@@ -4,17 +4,8 @@
  * campaign's own yellow, with NOISE deforming as a signal driven by the noise
  * machine's real output (PretextNoiseHeadline). The line under it is the
  * campaign poster's. No event claims here: this section describes the
- * drawing, not a programme. Reaching the last panel starts the machine.
+ * drawing, not a programme. Reaching the panel starts the machine.
  */
-const controls = [
-  { action: 'play', label: 'Play' },
-  { action: 'stop', label: 'Stop' },
-  { action: 'knob1-up', label: 'Tone +' },
-  { action: 'knob1-down', label: 'Tone −' },
-  { action: 'knob2-up', label: 'Echo +' },
-  { action: 'knob2-down', label: 'Echo −' },
-  { action: 'plot', label: 'New drawing' },
-]
 </script>
 
 <template>
@@ -25,28 +16,21 @@ const controls = [
       phone-focus="0 1 0 1"
       poster-version="phone-story-1"
       side="left"
-      style="--chapter-ground: var(--field-yellow)"
+      style="--chapter-ground: var(--field-yellow); --chapter-tail: 55svh; --chapter-tail-phone: 60svh"
       caption="A noise machine and a pen plotter. Sound in, drawing out."
-      hint="Hold and move over the machine. Drag a knob."
-      :controls="controls"
-      :step-actions="[null, 'plot']"
+      :step-actions="['plot']"
     >
       <div class="chapter-panel">
         <h2 id="noise-title" class="display noise-title">
           <PretextNoiseHeadline text="Make some noise" />
         </h2>
         <p class="lede noise-lede">For the ones who can’t leave it alone.</p>
-      </div>
-      <div class="chapter-panel">
-        <p class="copy">
-          Music and instruments, art and illustration: the loud, colourful side of
-          making.
-        </p>
         <ReadMore class="noise-more">
           <p class="copy">
-            The noise machine here is playable. Hold the pointer down over it
-            and move to change the pitch, drag its knobs, and watch the plotter turn
-            what you play into a drawing.
+            Music and instruments, art and illustration: the loud, colourful side
+            of making. The noise machine here is playable: hold the pointer down
+            over it and move to change the pitch, drag its knobs, and watch the
+            plotter turn what you play into a drawing.
           </p>
         </ReadMore>
       </div>

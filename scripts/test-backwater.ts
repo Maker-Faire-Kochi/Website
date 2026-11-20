@@ -10,6 +10,7 @@ import { PEAK } from '../app/three/core/voice'
 import { backwaterSound } from '../app/three/scenes/backwater/sound'
 import type { Materials, MatKey } from '../app/three/core/kit'
 import { HIT_RANGE, ROPE_GRIP_R, SCOOP_FRONT, createCrew, palmOff } from '../app/three/scenes/backwater/crew'
+import { createMarket } from '../app/three/scenes/backwater/market'
 import { PASS, STROKE, TAIL, ropeFrom, ropeLength, ropeTo, tailEnds } from '../app/three/scenes/backwater/haul'
 import { ELBOW_MAX, apply, fkLeg, mul, type Vec3 } from '../app/three/people/ik'
 import { B } from '../app/three/people/motion'
@@ -18,7 +19,7 @@ import {
   ANGLE, FOV_DEG, SHOTS, SHOT_MAX, ShotFollower, bankSubject, basis, cameraAt, contains, fishersSubject, framingAt, project,
   catchSubject, machineSubject, netFraming, newFraming, shotFramings, type Cast,
 } from '../app/three/scenes/backwater/shots'
-import { FAR, ROPES, SCOOP, type V3 } from '../app/three/scenes/backwater/layout'
+import { FAR, ROPES, SCOOP, STALLS, TABLE_TOP, type V3 } from '../app/three/scenes/backwater/layout'
 import { FISH_LEN, MAX_FISH } from '../app/three/scenes/backwater/catch'
 
 // Stand-in for the stage's materials (the real ones need a canvas).
@@ -780,10 +781,11 @@ function tailDistance(i: number, p: THREE.Vector3) {
 {
   const sim = new World(11)
   const crew = await createCrew({ materials: fakeMaterials() }, sim)
+  const market = await createMarket({ materials: fakeMaterials() })
   const fig = (p: Person, y: number) => ({ x: p.position.x, y, z: p.position.z, h: p.dims.H })
   const cast: Cast = {
     fishers: crew.fishers.map(p => fig(p, DECK.top)),
-    bank: crew.bankPeople.map(p => fig(p, BANK.top)),
+    bank: [...crew.bankPeople, ...market.people].map(p => fig(p, BANK.top)),
     kite: crew.fitPoints.map(v => [v.x, v.y, v.z] as V3),
   }
   assert(SHOTS.map(s => s.id).join(',') === 'wide,fishers,net,bank', `four shots in the chapter's order (${SHOTS.map(s => s.id).join(', ')})`)
@@ -853,6 +855,17 @@ function tailDistance(i: number, p: THREE.Vector3) {
       for (let k = 0; k <= 6; k++) for (const [dx, dz] of [[0.25, 0], [-0.25, 0], [0, 0.25], [0, -0.25]]) pts.push([p.position.x + dx!, y + p.dims.H * k / 6, p.position.z + dz!])
       things.push({ name: i < crew.fishers.length ? `fisher ${i}` : ['watcher', 'visitor', 'child'][i - crew.fishers.length]!, pts, near: 6, tall: true })
     })
+    market.people.forEach((p, i) => {
+      const pts: V3[] = []
+      for (let k = 0; k <= 6; k++) for (const [dx, dz] of [[0.25, 0], [-0.25, 0], [0, 0.25], [0, -0.25]]) pts.push([p.position.x + dx!, BANK.top + p.dims.H * k / 6, p.position.z + dz!])
+      things.push({ name: ['seller', 'buyer', 'browser'][i]!, pts, near: 6, tall: true })
+    })
+    STALLS.forEach((s, i) => {
+      const pts: V3[] = []
+      const top = s.kind === 'tarp' ? s.postF : TABLE_TOP
+      for (const dx of [-s.d / 2, s.d / 2]) for (const dz of [-s.w / 2, s.w / 2]) for (const h of [0, top]) pts.push([s.x + dx, BANK.top + h, s.z + dz])
+      things.push({ name: `${s.kind} ${i}`, pts, near: 7, tall: false })
+    })
     things.push({ name: 'kite', pts: crew.fitPoints.map(v => [v.x, v.y, v.z] as V3), near: 6, tall: false })
     PALMS.forEach((sp, j) => {
       const c = palmPoint(sp, [0, 0], [0, 0], [0, 0, 0])
@@ -885,6 +898,42 @@ function tailDistance(i: number, p: THREE.Vector3) {
       })
     }
     assert(worstNear >= 0 && worstTall <= 0.45, `nothing looms anywhere in the full slot, at every shot and screen: people and the kite 6+ m from the camera and at most 45% of the slot's height, palms 8+ m (tallest ${(worstTall * 100).toFixed(0)}%, closest margin ${worstNear.toFixed(1)} m${worst ? `; ${worst}` : ''})`)
+
+    // The market sits south-east of the people: no stall's body ever stands between a shot's
+    // camera and a bank person (it would hide the cast the shot is for).
+    {
+      const box = (s: (typeof STALLS)[number]) => ({ x0: s.x - s.d / 2, x1: s.x + s.d / 2, z0: s.z - s.w / 2, z1: s.z + s.w / 2, top: BANK.top + (s.kind === 'tarp' ? s.postF : TABLE_TOP) })
+      let blocked = ''
+      for (const sl of slots) {
+        for (const [si, f] of shotFramings(cast, sl.aspect, SHOTS.map(() => newFraming())).entries()) {
+          const c = cameraAt(f)
+          for (const p of crew.bankPeople) for (const s of STALLS) {
+            const b = box(s)
+            for (const dy of [0.05, p.dims.H * 0.9]) {
+              for (let t = 0.05; t < 1; t += 0.02) {
+                const x = c[0] + (p.position.x - c[0]) * t
+                const y = c[1] + (BANK.top + dy - c[1]) * t
+                const z = c[2] + (p.position.z - c[2]) * t
+                if (x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && y <= b.top) {
+                  blocked ||= `a stall hides a bank person (${p.position.x.toFixed(1)}, ${p.position.z.toFixed(1)}) in shot ${si} (${sl.name})`
+                }
+              }
+            }
+          }
+        }
+      }
+      assert(!blocked, blocked || 'no stall stands between any shot\'s camera and a bank person')
+    }
+    // The haggle keeps everyone where they stand: every reach is in range, so nobody
+    // is made to step toward a grip (a step is permanent -- it would drift over loops).
+    {
+      const before = market.people.map(p => [p.position.x, p.position.z])
+      for (let i = 0; i < Math.round(50 / DT); i++) market.step(DT)
+      market.people.forEach((p, i) => {
+        const b = before[i]!
+        assert(Math.abs(p.position.x - b[0]!) < 1e-9 && Math.abs(p.position.z - b[1]!) < 1e-9, `the ${['seller', 'buyer', 'browser'][i]} stays put through the haggle loop (every grip in reach)`)
+      })
+    }
   }
   // (45 px at desktop: the frame also holds the boom's tip and its spreader poles through the whole dip,
   // so the machine never leaves it while the net is down, and the box stops at the dock's top.)

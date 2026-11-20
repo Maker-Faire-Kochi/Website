@@ -14,15 +14,12 @@ import type { SceneName } from '~/three/scenes'
  * centre crosses the middle of the screen it becomes the chapter's step:
  * `progress` is emitted continuously (0 at the first panel, n-1 at the last)
  * and `stepActions[i]`, if given, runs as a scene action when panel i is
- * reached, so scrolling tells the scene's story. The caption, hint and the
- * keyboard equivalents of every pointer interaction (WCAG 2.1.1) sit in a dock
- * at the top of the stage; their results go to a polite live region.
+ * reached, so scrolling tells the scene's story. The caption sits in a dock
+ * at the top of the stage.
  */
 const props = withDefaults(defineProps<{
   scene: SceneName
   caption: string
-  hint?: string
-  controls: { action: string, label: string }[]
   poster?: string
   posterVersion?: string
   posterAlt?: string
@@ -42,7 +39,6 @@ const emit = defineEmits<{ progress: [p: number], tailProgress: [p: number] }>()
 const { state: motion, view } = useMotion()
 const root = ref<HTMLElement | null>(null)
 const slot = ref<{ action: (name: string) => string | null } | null>(null)
-const status = ref('')
 const unavailable = ref(false)
 const phone = ref(false)
 /** A landscape phone: the story's cards hold the left of the screen, the drawing the right. */
@@ -122,13 +118,6 @@ const box = computed(() => {
   const [x0 = 0, x1 = 1, y0 = 0, y1 = 1] = focusNow.value.trim().split(/\s+/).map(Number)
   return { x0, x1, y0, y1 }
 })
-
-async function run(action: string) {
-  const out = slot.value?.action(action)
-  status.value = ''
-  await nextTick()
-  status.value = out ?? (motion.value === 'running' ? 'The drawing is still loading.' : 'Motion is paused. Press Play motion to run it.')
-}
 
 /* ── Steps ── */
 let raf = 0
@@ -337,7 +326,7 @@ onUnmounted(() => {
 <template>
   <div ref="root" class="chapter" :class="`panels-${side}`" :data-step="active" @pointerenter="calloutOn" @pointerleave="calloutOff">
     <!-- First in reading order, so the section's heading comes before the
-         drawing's caption and controls; CSS puts the stage first on screen. -->
+         drawing's caption; CSS puts the stage first on screen. -->
     <div class="chapter-panels" data-scene-ignore>
       <slot :active="active" />
     </div>
@@ -365,13 +354,8 @@ onUnmounted(() => {
         <!-- Phones: the story cards say it; screen readers keep the caption. -->
         <p class="chapter-caption" :class="{ 'visually-hidden': phone }">
           <span class="chapter-text">{{ caption }}</span>
-          <span v-if="hint && view !== 'reduced' && !unavailable" class="chapter-hint" aria-hidden="true">{{ hint }}</span>
         </p>
-        <div v-if="view !== 'reduced' && !unavailable && controls.length" class="chapter-controls" role="group" :aria-label="`Controls for: ${caption}`">
-          <button v-for="c in controls" :key="c.action" type="button" class="chip" @click="run(c.action)">{{ c.label }}</button>
-        </div>
       </div>
-      <p class="visually-hidden" aria-live="polite">{{ status }}</p>
     </div>
   </div>
 </template>
@@ -429,18 +413,6 @@ onUnmounted(() => {
   font-weight: 600;
   font-size: 0.875rem;
   line-height: 1.45;
-}
-
-.chapter-hint {
-  font-size: 0.8125rem;
-  opacity: 0.78;
-}
-
-.chapter-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-top: 0.6rem;
 }
 
 /* The panels column: one screen at least, panels spaced so each is read alone. */
@@ -530,32 +502,14 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
-/* Phones, and short screens (a landscape phone): a compact dock -- one row of
-   controls that scrolls sideways, two lines of caption, no hint -- so the box
-   leaves the drawing most of the screen. */
+/* Phones, and short screens (a landscape phone): a compact dock -- a two-line
+   caption -- so the box leaves the drawing most of the screen. */
 @media (max-width: 740px), (max-height: 500px) {
-  .chapter-controls {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    /* A scroller clips on both axes: room for the 2px focus ring drawn 3px outside each chip. */
-    margin: 0.6rem -6px -6px;
-    padding: 6px;
-  }
-
-  .chapter-controls .chip {
-    flex: none;
-  }
-
   .chapter-text {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-  }
-
-  .chapter-hint {
-    display: none;
   }
 
   .chapter-dock {
@@ -565,7 +519,7 @@ onUnmounted(() => {
 
 /* Phones: a story. The drawing holds the screen above --stick (measureBand:
    whatever the chapter's tallest card leaves, 45 to 80% of it) with only the
-   controls docked under it; the caption is said by the cards, so it is kept
+   caption docked under it; the caption is said by the cards, so it is kept
    for screen readers only (visually-hidden, set from `phone`). Each panel is a card pinned below the drawing,
    filling the band to the screen's foot; the next card slides up over it.
    Every step holds for 60% of a screen of scrolling (card + gap), and
@@ -574,10 +528,6 @@ onUnmounted(() => {
   /* measureBand() sets each chapter's own --stick in px; this is the first paint's. */
   .chapter {
     --stick: 74svh;
-  }
-
-  .chapter-controls {
-    margin: 0 -6px;
   }
 
   .chapter-dock,
@@ -644,7 +594,7 @@ onUnmounted(() => {
 
 /* A landscape phone is too short for a card under the drawing: the cards pin
    down the left 40% of the screen, a whole screen each, the drawing holds the
-   rest (LANDSCAPE_FOCUS) with the controls docked on it, above the nav. */
+   rest (LANDSCAPE_FOCUS) with the dock on it, above the nav. */
 @media (max-width: 740px) and (orientation: landscape), (max-height: 500px) and (pointer: coarse) and (orientation: landscape) {
   .chapter-dock,
   .panels-right .chapter-dock {

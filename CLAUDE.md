@@ -30,15 +30,15 @@ screen) · When (`#countdown`, blue machines chapter) · Beyond (`#beyond`, yell
   up with `margin-top: -100svh` — NOT a negative margin on the sticky stage, which shrinks its
   sticky box to nothing and pins it a whole screen past the chapter, over the next section.
   Panels emit `progress` (continuous, 0..n-1, as each panel's centre crosses mid-screen) and
-  `stepActions[i]` runs a scene action when panel i is reached. Caption, hint and keyboard
-  controls sit in the dock: the bottom corner on the drawing's side, just above the nav (under
-  the scene on phones; compact -- one scrolling row of chips, no hint -- on phones and screens
+  `stepActions[i]` runs a scene action when panel i is reached. The caption sits in the dock:
+  the bottom corner on the drawing's side, just above the nav (under
+  the scene on phones; compact on phones and screens
   under 500px tall). **The focus box stops at the dock's top** (and the nav's): `SceneChapter`
   measures both (ResizeObserver) and trims the box's y1, so no scene frames its subject under
   them at any size. The props' boxes are the maximum; the live box is shorter.
 - **Phones (<= 740px, or a short touch screen): a story (2026-10-24; was 32 screens, now ~22 at
-  390x844).** The drawing holds the screen above the chapter's `--stick`; only the controls dock
-  under it (the caption is `visually-hidden` there, the cards say it). Each panel is a CARD,
+  390x844).** The drawing holds the screen above the chapter's `--stick`; only the caption dock
+  under it (it is `visually-hidden` there, the cards say it). Each panel is a CARD,
   `position: sticky` at `--stick` and filling to the screen's foot; the next card slides up over it.
   `measureBand` sets one pin per chapter from its tallest card's own content (45-80% down). A step
   holds 60svh of scrolling (card + `calc(var(--stick) - 40svh)` gap) and counts from a card reaching
@@ -54,7 +54,7 @@ screen) · When (`#countdown`, blue machines chapter) · Beyond (`#beyond`, yell
   every card at 320/390/430 wide and landscape: pinned, every line above the nav, on its step
   (`data-step`), drawing >= 45% of the screen, page <= 25 screens, Read more, the Domains row.
   The phone hero flattens its words block (`display: contents`) so the playground sits under
-  the headline and facts, sized to the mat (`min(68svh, 80vw)`); its controls are one sideways row.
+  the headline and facts, sized to the mat (`min(68svh, 80vw)`).
 - **Smoothness:** every scene builds once the page is idle, in page order, one at a time
   (`buildQueue` in `SceneSlot.vue`), not mid-scroll as a chapter nears (`near` is the fallback);
   `FixedClock.advance` takes a wall-clock budget (stage: 8 ms per slot) so a slow phone slows the
@@ -85,8 +85,9 @@ screen) · When (`#countdown`, blue machines chapter) · Beyond (`#beyond`, yell
   32px at 3840), and the wrap is `82.5rem`, so 2K/4K monitors and TVs get the 1920 layout scaled
   up, not a small column. px-built chrome steps with it: the rail `zoom`s 1.25/1.5/2 at
   2400/2880/3600px and `--rail-h` follows (70/84/112px). Size new layout in rem, not px.
-- **Domains** (`components/home/Domains.vue`) is a pinned "faire aisle": one striped-awning stall
-  per discipline, scrolled sideways while the section is pinned (height = screen + row overflow);
+- **Domains** (`components/home/Domains.vue`) is a pinned "faire aisle": one plain-board stall
+  per discipline (the striped awnings were removed 2026-11: they pulled the eye off the copy),
+  scrolled sideways while the section is pinned (height = screen + row overflow);
   focusing a stall's link scrolls the page to it. No JS / row fits: a plain sideways-scrolling row.
   Phones never pin it: the words, then the stalls as a row swiped one at a time (scroll snap), then
   the meter, which follows the row's own scroll.
@@ -153,7 +154,7 @@ screen) · When (`#countdown`, blue machines chapter) · Beyond (`#beyond`, yell
     the wheel-leg jumps off); robots fall and get up their own way. The pointer is DELIBERATE only:
     moving it changes nothing (tested bitwise); a click/tap or a 1.2 s rest sets one cyan target the
     nearest robots go to; grab-and-fling stays. **Text is a separate zone:** `Hero.vue` publishes
-    the logo, words block, key box, hint and nav rail as `heroKeepOut` rects (core/signal.ts,
+    the logo, words block, key box and nav rail as `heroKeepOut` rects (core/signal.ts,
     fractions of the slot); the scene raises a plinth under each and treats it as a solid wall, so no
     robot, ball or block is ever drawn over the text (tested). `heroAnchors` ids are `${kind}-${n}`;
     `HeroLeaders` numbers 01 Makey, 02 duck, 03 balancer, 04 dog.
@@ -161,7 +162,16 @@ screen) · When (`#countdown`, blue machines chapter) · Beyond (`#beyond`, yell
     stroke, eyes on the net via `lookAt(net, { priority: 'target' })`); the catch (karimeen-style fish,
     seeded, some dips empty) comes up in the net and one fisher scoops it with a 9 m pole from a rack
     beside his hip into an open basket. Coconuts fall on their own every 12–18 s and hit the bank
-    people (kid, watcher, visitor), each with a kind reaction. Four scroll shots (`backwater/shots.ts`, a PERSPECTIVE
+    people (kid, watcher, visitor), each with a kind reaction. On the bank south-east of them is a
+    small fish market (`backwater/market.ts`): a covered stall (posts, a sloped tarp, a counter, a
+    rail of hung fish, tubs, a basket, a hanging scale) and a low open fish table, fronts toward the
+    bank shot's camera, where a seller and a customer haggle over the fish
+    (a seeded beat loop: look, point, the seller's open palm, a second try, settle) and a browser
+    picks over the table; the hung fish sway like the palms. They stand in the one pocket where no
+    shot's sightline to a person ever crosses one (tested) -- a second covered stall cannot fit it --
+    and keep 7 m off every camera like the palms' 8 m (they join `keepAway` in shots.ts, which holds
+    a hand's breadth of margin; the market people join `cast.bank`).
+    Four scroll shots (`backwater/shots.ts`, a PERSPECTIVE
     camera, 40° FOV, fitted by projected bounds): the machine from a boat at eye level, three-quarter
     on from the net's end (az -0.55: end-on from the bank was a tangle, a bank-side camera stood among
     the palms), the balance (pivot, counterweights, haulers), the catch (fixed frame on the lifted net

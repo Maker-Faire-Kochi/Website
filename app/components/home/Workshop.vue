@@ -22,8 +22,6 @@ const steps = [
       phone-focus="0 1 0 1"
       side="left"
       caption="A carpenter at the bench: saw, plane, mallet and chisel, and a stool in exploded view."
-      hint="Hover a tool, tap it to use it."
-      :controls="[{ action: 'saw', label: 'Saw' }, { action: 'plane', label: 'Plane' }, { action: 'chisel', label: 'Chisel' }, { action: 'stool', label: 'Stool' }, { action: 'wave', label: 'Wave' }]"
       :step-actions="steps.map(s => s.action)"
     >
       <div v-for="(s, i) in steps" :key="s.title" class="chapter-panel">
