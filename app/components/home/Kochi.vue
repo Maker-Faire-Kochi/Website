@@ -2,7 +2,6 @@
 // Pure module (no three.js): the camera's scroll input.
 import { scrollShot } from '~/three/scenes/backwater/shots'
 import { scrollCoconut } from '~/three/scenes/backwater/scroll-coconut'
-const { view } = useMotion()
 
 /**
  * Why Kochi, full screen over the backwater: the cheena vala worked by its
@@ -61,7 +60,6 @@ onUnmounted(() => {
       </div>
       <div class="chapter-panel field-yellow">
         <h3 class="display-3 mission-title">The mission</h3>
-        <p v-if="view !== 'reduced'" class="coconut-cue">Keep scrolling to see a coconut fall.</p>
         <p class="lede mission-lede">To build a lasting maker culture in Kerala.</p>
         <ReadMore class="mission-copy">
           <p class="copy">
@@ -74,12 +72,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.coconut-cue {
-  margin-top: 1rem;
-  font-family: var(--font-readout);
-  font-size: 0.8125rem;
-  color: var(--field-blue);
-}
 .kochi-lede {
   margin-top: 1.5rem;
   color: var(--on-blue);
